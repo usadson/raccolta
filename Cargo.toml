@@ -10,3 +10,4 @@ thiserror = "*"
 
 [dev-dependencies]
 pretty_assertions = "*"
+rstest = "*"

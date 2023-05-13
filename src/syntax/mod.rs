@@ -1,7 +1,12 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+mod clause;
+mod expression;
 mod keyword;
+mod parse;
+mod set_function;
+mod statement;
 mod token;
 
 pub use keyword::Keyword;
@@ -134,11 +139,6 @@ impl<'input> Iterator for Lexer<'input> {
     fn next(&mut self) -> Option<Self::Item> {
         self.consume_token()
     }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Query {
-
 }
 
 #[cfg(test)]
