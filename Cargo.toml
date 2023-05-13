@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 serde = { version = "*", features = [ "derive" ] }
 strum = { version = "*", features = [ "derive" ] }
+thiserror = "*"
+
+[dev-dependencies]
+pretty_assertions = "*"

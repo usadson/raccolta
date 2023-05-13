@@ -72,11 +72,11 @@ impl<'a> Lexer<'a> {
             }
         };
 
-        Some(Token {
+        Some(Token::new(
             first_character_byte_idx,
-            last_character_byte_idx: self.character_byte_idx,
-            kind,
-        })
+            self.character_byte_idx,
+            kind
+        ))
     }
 
     /// Gets the current character pointed to by the [`index`].
@@ -85,13 +85,12 @@ impl<'a> Lexer<'a> {
     }
 
     /// Check if the current character is an `<identifier body character>`.
-    fn is_current_character_identifier_body_character(&mut self) -> bool {
+    fn is_current_character_identifier_body_character(&self) -> bool {
         let Some(character) = self.current_character() else {
             return false;
         };
 
         if matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
-            self.next_character();
             true
         } else {
             false
@@ -129,7 +128,48 @@ impl<'a> Lexer<'a> {
     }
 }
 
+impl<'input> Iterator for Lexer<'input> {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.consume_token()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Query {
+
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::syntax::*;
+
+    use super::Lexer;
+
+    use pretty_assertions::{
+        assert_eq
+    };
+
+
+    #[test]
+    fn lexer_simple_select_query() {
+        let input = "SELECT * FROM blog_posts;";
+
+        let tokens: Vec<_> = Lexer::new(input)
+            .collect();
+
+        assert_eq!(tokens, vec![
+            Token::new(0, 6, TokenKind::Keyword(Keyword::Select)),
+
+            Token::new(7, 8, TokenKind::Asterisk),
+
+            Token::new(9, 13, TokenKind::Keyword(Keyword::From)),
+
+            Token::new(14, 24, TokenKind::Identifier),
+
+            Token::new(24, 25, TokenKind::Semicolon),
+        ]);
+    }
 
 }

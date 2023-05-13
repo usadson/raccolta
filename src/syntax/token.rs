@@ -3,10 +3,28 @@
 
 use super::Keyword;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Token {
-    pub(super) first_character_byte_idx: usize,
-    pub(super) last_character_byte_idx: usize,
-    pub(super) kind: TokenKind,
+    first_character_byte_idx: usize,
+    last_character_byte_idx: usize,
+    kind: TokenKind,
+}
+
+impl Token {
+    /// Constructs a new [`Token`] instance.
+    pub(super) fn new(first_character_byte_idx: usize, last_character_byte_idx: usize, kind: TokenKind) -> Self {
+        Self { first_character_byte_idx, last_character_byte_idx, kind }
+    }
+
+    /// Returns the string representation as provided by the `input`.
+    pub fn as_string<'a>(&self, input: &'a str) -> &'a str {
+        &input[self.first_character_byte_idx..self.last_character_byte_idx]
+    }
+
+    /// Returns which kind of token this is.
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
 }
 
 /// A token is a lexical constituent.
