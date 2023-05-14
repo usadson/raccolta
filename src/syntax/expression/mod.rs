@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+pub mod data_type;
 pub mod query_expression;
 pub mod query_specification;
 pub mod table_expression;
