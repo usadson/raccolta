@@ -29,6 +29,7 @@ impl Token {
 
 /// A token is a lexical constituent.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(strum::Display)]
 pub enum TokenKind {
     /// The '*' character.
     Asterisk,
