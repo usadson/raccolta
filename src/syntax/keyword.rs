@@ -14,7 +14,7 @@ use strum::{
 /// keywords are used, but most are just reserved for compatibility and future
 /// purposes.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(AsRefStr, EnumIter)]
+#[derive(AsRefStr, EnumIter, strum::Display)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum Keyword {
     Absolute,
