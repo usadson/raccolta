@@ -85,6 +85,7 @@ pub enum NationalCharacterStringType {
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub enum NumericType {
+    Integer,
 
     Float {
         precision: Option<usize>
