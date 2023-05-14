@@ -13,6 +13,11 @@ mod token;
 pub use keyword::Keyword;
 pub use token::{Token, TokenKind};
 
+pub use parse::{
+    Parser,
+    StatementParseError,
+};
+
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug)]
