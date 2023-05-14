@@ -2,6 +2,7 @@
 // All Rights Reserved.
 
 mod clause;
+mod common;
 mod expression;
 mod keyword;
 mod parse;
