@@ -33,9 +33,9 @@ pub enum ColumnConstraintDefinition {
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct ColumnDefinition {
-    column_name: String,
-    data_type: DataType,
-    column_constraint_definitions: Vec<ColumnConstraintDefinition>,
+    pub column_name: String,
+    pub data_type: DataType,
+    pub column_constraint_definitions: Vec<ColumnConstraintDefinition>,
 }
 
 /// ```text
@@ -52,9 +52,9 @@ pub struct ColumnDefinition {
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableDefinition {
-    table_name: String,
+    pub table_name: String,
 
-    elements: Vec<TableElement>,
+    pub elements: Vec<TableElement>,
 }
 
 /// ```text
