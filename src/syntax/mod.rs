@@ -6,6 +6,7 @@ mod common;
 mod expression;
 mod keyword;
 mod parse;
+mod schema;
 mod set_function;
 mod statement;
 mod token;
