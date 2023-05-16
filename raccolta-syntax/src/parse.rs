@@ -6,7 +6,7 @@ mod extensions;
 use strum::EnumProperty;
 use thiserror::Error;
 
-use crate::syntax::expression::QuerySpecification;
+use crate::expression::QuerySpecification;
 
 use super::{
     clause::FromClause,

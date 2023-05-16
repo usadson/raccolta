@@ -168,7 +168,7 @@ impl<'input> Iterator for Lexer<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::syntax::*;
+    use super::*;
 
     use super::Lexer;
 

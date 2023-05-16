@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use crate::syntax::common::character_set::CharacterSetSpecification;
+use crate::common::character_set::CharacterSetSpecification;
 
 /// ```text
 /// <character string type> ::=
