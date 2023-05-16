@@ -77,6 +77,19 @@ impl<'a> Lexer<'a> {
                 }
             }
 
+            '0'..='9' => {
+                let mut value = ((first_character as u8) - b'0') as u64;
+
+                while self.is_current_character_digit() {
+                    value *= 10;
+                    value += ((self.current_character().unwrap() as u8) - b'0') as u64;
+
+                    self.next_character();
+                }
+
+                TokenKind::UnsignedInteger(value)
+            }
+
             _ => {
                 println!("Unexpected character: '{first_character}' dec={} hex=0x{:X}",
                     first_character as usize, first_character as usize);
@@ -96,17 +109,22 @@ impl<'a> Lexer<'a> {
         self.input[self.character_byte_idx..].chars().nth(0)
     }
 
+    /// Check if the current character is a `<digit>`.
+    fn is_current_character_digit(&self) -> bool {
+        let Some(character) = self.current_character() else {
+            return false;
+        };
+
+        matches!(character, '0'..='9')
+    }
+
     /// Check if the current character is an `<identifier body character>`.
     fn is_current_character_identifier_body_character(&self) -> bool {
         let Some(character) = self.current_character() else {
             return false;
         };
 
-        if matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
-            true
-        } else {
-            false
-        }
+        matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_')
     }
 
     /// Checks if the character pointed to by [`index`] is whitespace.

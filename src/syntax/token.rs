@@ -46,7 +46,11 @@ pub enum TokenKind {
     /// The '>' character.
     GreaterThanSign,
 
+    /// A [`Keyword`].
     Keyword(Keyword),
+
+    /// An unsigned integer [`u64`].
+    UnsignedInteger(u64),
 
     //// The '(' character.
     LeftParenthesis,

@@ -16,7 +16,7 @@ use super::{
             NumericType,
             PredefinedType,
         },
-        query_specification::SelectList,
+        query_specification::{SelectList, SelectSublist, DerivedColumn},
         query_expression::{
             QueryExpression,
             QueryExpressionBody,
@@ -27,7 +27,7 @@ use super::{
             TablePrimary,
             TablePrimaryKind,
             TableReference,
-        },
+        }, ValueExpression, NumericValueExpression,
     },
     Keyword,
     Lexer,
@@ -369,7 +369,41 @@ impl Parser {
             return Ok(SelectList::Asterisk);
         }
 
-        todo!("here should <value expression> be parsed")
+        let mut sublist = Vec::new();
+
+        loop {
+            if is_end_of_statement(tokens) {
+                if sublist.is_empty() {
+                    return Err(StatementParseError::EofSelectList(input));
+                }
+
+                return Ok(SelectList::Sublist(sublist));
+            }
+
+            if !sublist.is_empty() && tokens[0].kind() != TokenKind::Comma {
+                return Ok(SelectList::Sublist(sublist));
+            }
+
+            let tokens_saved = *tokens;
+
+            let mut error = None;
+
+            match self.parse_value_expression(input, tokens) {
+                Ok(value_expression) => {
+                    sublist.push(SelectSublist::DerivedColumn(DerivedColumn {
+                        value_expression,
+                        alias: None
+                    }));
+                    continue;
+                }
+                Err(e) => {
+                    *tokens = tokens_saved;
+                    error = Some(e);
+                }
+            }
+
+            todo!("Failed to parse column: {error:?}");
+        }
     }
 
     /// Parses a single table element, but does not consume a comma `,` or
@@ -529,6 +563,42 @@ impl Parser {
             _ => Err(StatementParseError::TableReferenceUnexpectedToken {
                 found: first_token.as_string(input),
                 token_kind: first_token.kind()
+            })
+        }
+    }
+
+    /// Parse a `<value expression>`.
+    ///
+    /// ```text
+    /// <value expression> ::=
+    //        <numeric value expression>
+    //      | <string value expression>
+    //      | <datetime value expression>
+    //      | <interval value expression>
+    //      | <boolean value expression>
+    //      | <user-defined type value expression>
+    //      | <row value expression>
+    //      | <reference value expression>
+    //      | <collection value expression>
+    /// ```
+    fn parse_value_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ValueExpression, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::ValueExpressionUnexpectedEndOfFile);
+        }
+
+        let first_token = tokens[0];
+        *tokens = &tokens[1..];
+
+        match first_token.kind() {
+            TokenKind::UnsignedInteger(integer) => Ok(
+                ValueExpression::Numeric(
+                    NumericValueExpression::SimpleU64(integer)
+                )
+            ),
+
+            _ => Err(StatementParseError::ValueExpressionUnexpectedToken {
+                found: first_token.as_string(input),
+                token_kind: first_token.kind(),
             })
         }
     }
@@ -724,6 +794,15 @@ pub enum StatementParseError<'input> {
         found: &'input str,
         token_kind: TokenKind,
     },
+
+    #[error("unexpected end-of-file: expected a column name, value or expression")]
+    ValueExpressionUnexpectedEndOfFile,
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected a column name, value or expression")]
+    ValueExpressionUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
 }
 
 #[cfg(test)]
@@ -735,6 +814,8 @@ mod tests {
 
     use super::*;
     use rstest::rstest;
+
+    use pretty_assertions::assert_eq;
 
     #[rstest]
     #[case("CREATE TABLE table (id INT);", Keyword::Table, 13..18)]
@@ -783,6 +864,39 @@ mod tests {
         );
 
         assert_eq!(parser.parse_statement(input), Ok(expected));
+    }
+
+    #[rstest]
+    #[case("SELECT 1", 1)]
+    #[case("SELECT 1;", 1)]
+    #[case("SELECT 693", 693)]
+    fn parser_simple_select_number_literal_statement(#[case] input: &str, #[case] numeric_value: u64) {
+        let derived_column = DerivedColumn {
+            value_expression: ValueExpression::Numeric(NumericValueExpression::SimpleU64(numeric_value)),
+            alias: None
+        };
+
+        let expected = SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::SelectStatement(
+                QueryExpression{
+                    body: QueryExpressionBody::SimpleTable(
+                        SimpleTable::QuerySpecification(
+                            QuerySpecification {
+                                set_quantifier: SetQuantifier::All,
+                                select_list: SelectList::Sublist(vec![
+                                    SelectSublist::DerivedColumn(
+                                        derived_column
+                                    )
+                                ]),
+                                table_expression: None,
+                            }
+                        )
+                    )
+                }
+            )
+        );
+
+        assert_eq!(Parser::new().parse_statement(input), Ok(expected));
     }
 
     fn parser_select_statement_erroneous_base<'input>(input: &'input str, expected: StatementParseError<'input>) {
