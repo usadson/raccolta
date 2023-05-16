@@ -71,3 +71,14 @@ pub enum TokenKind {
     /// A string literal, e.g. 'Hello, world!'.
     StringLiteral,
 }
+
+impl TokenKind {
+    /// Converts this token kind to a [`Keyword`] if applicable.
+    pub const fn to_keyword(&self) -> Option<Keyword> {
+        if let TokenKind::Keyword(keyword) = self {
+            Some(*keyword)
+        } else {
+            None
+        }
+    }
+}

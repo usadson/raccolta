@@ -1,12 +1,15 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+mod extensions;
+
 use strum::EnumProperty;
 use thiserror::Error;
 
 use crate::syntax::expression::QuerySpecification;
 
 use super::{
+    clause::FromClause,
     expression::{
         data_type::{
             DataType,
@@ -19,19 +22,32 @@ use super::{
             QueryExpressionBody,
             SimpleTable,
         },
+        TableExpression,
+        table_reference::{
+            TablePrimary,
+            TablePrimaryKind,
+            TableReference,
+        },
     },
     Keyword,
     Lexer,
+    schema::definition::table_definition::{
+        ColumnDefinition,
+        TableDefinition,
+        TableElement,
+    },
+    set_function::SetQuantifier,
     statement::{
         SqlDataStatement,
         SqlExecutableStatement,
         SqlSchemaDefinitionStatement,
         SqlSchemaStatement,
     },
-    set_function::SetQuantifier,
     Token,
-    TokenKind, schema::definition::{TableDefinition, table_definition::{TableElement, ColumnDefinition}},
+    TokenKind,
 };
+
+use extensions::ParseArrayExtensions;
 
 pub struct Parser {
 
@@ -54,6 +70,34 @@ impl Parser {
     pub fn new() -> Self {
         Self {
             // ...
+        }
+    }
+
+    /// Parse an optional `<correlation name>`. A correlation name is an alias
+    /// to a specific column or table.
+    fn parse_correlation_name_optional<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<Option<String>, StatementParseError<'input>> {
+        if !tokens.consume_keyword(Keyword::As) {
+            return Ok(None);
+        }
+
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::CorrelationNameUnexpectedEndOfFile);
+        }
+
+        if let Some(identifier) = tokens.consume_identifier_owned(input) {
+            Ok(Some(identifier))
+        } else {
+            if let TokenKind::Keyword(keyword) = tokens[0].kind() {
+                return Err(StatementParseError::CorrelationNameUnexpectedKeyword {
+                    found: tokens[0].as_string(input),
+                    keyword
+                });
+            }
+
+            Err(StatementParseError::CorrelationNameUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            })
         }
     }
 
@@ -209,11 +253,17 @@ impl Parser {
     fn parse_statement_select_set_quantifier<'input>(&self, input: &'input str, mut tokens: &[Token], set_quantifier: SetQuantifier) -> StatementResult<'input> {
         let select_list = self.parse_select_list(input, &mut tokens)?;
 
-        let query_specification = QuerySpecification {
+        let mut query_specification = QuerySpecification {
             select_list,
             set_quantifier,
             table_expression: None
         };
+
+        if !is_end_of_statement(tokens) && tokens[0].kind() == TokenKind::Keyword(Keyword::From) {
+            query_specification.table_expression = Some(self.parse_statement_select_table_expression(
+                input, &mut tokens
+            )?);
+        }
 
         if !is_end_of_statement(tokens) {
             return Err(StatementParseError::SelectStatementUnexpectedToken{
@@ -234,6 +284,78 @@ impl Parser {
                 }
             )
         ))
+    }
+
+    /// Parse the table expression (FROM, WHERE, GROUP BY and HAVING).
+    /// ```text
+    /// <table expression> ::=
+    ///     <from clause>
+    ///     [ <where clause> ]
+    ///     [ <group by clause> ]
+    ///     [ <having clause> ]
+    /// ```
+    fn parse_statement_select_table_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableExpression, StatementParseError<'input>> {
+        let table_exprssion = TableExpression {
+            from_clause: self.parse_statement_select_table_expression_from_clause(input, tokens)?,
+            group_by_clause: None,
+            having_clause: None,
+            where_clause: None,
+        };
+
+        if !is_end_of_statement(tokens) {
+            if tokens[0].kind() == TokenKind::Keyword(Keyword::Having) {
+                todo!("HAVING clause not yet supported");
+            }
+
+            let mut toks = tokens.iter()
+                .map(|tok| tok.kind());
+
+            if toks.next() == Some(TokenKind::Keyword(Keyword::Group))
+                 && toks.next() == Some(TokenKind::Keyword(Keyword::By)) {
+                todo!("GROUP BY clause not yet supported");
+            }
+
+            if tokens[0].kind() == TokenKind::Keyword(Keyword::Where) {
+                todo!("WHERE clause not yet supported");
+            }
+        }
+
+        Ok(table_exprssion)
+    }
+
+    /// Parses a `<from clause>`
+    fn parse_statement_select_table_expression_from_clause<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<FromClause, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::FromClauseUnexpectedEof);
+        }
+
+        if tokens[0].kind() != TokenKind::Keyword(Keyword::From) {
+            return Err(StatementParseError::FromClauseUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        let mut from_clause = FromClause {
+            table_references: vec![
+                self.parse_table_reference(input, tokens)?
+            ],
+        };
+
+        loop {
+            if is_end_of_statement(tokens) || tokens[0].kind() != TokenKind::Comma {
+                break;
+            }
+
+            // Skip the comma token
+            *tokens = &tokens[1..];
+
+            from_clause.table_references.push(self.parse_table_reference(input, tokens)?);
+        }
+
+        Ok(from_clause)
     }
 
     /// Parses a `<select list>`
@@ -371,12 +493,68 @@ impl Parser {
             definition.elements.push(element_pair.1);
         }
     }
+
+    /// Parses a `<table reference>`
+    ///
+    /// ```text
+    /// <table reference> ::=
+    ///       <table primary>
+    ///     | <joined table>
+    /// ```
+    fn parse_table_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableReference, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::TableReferenceUnexpectedEndOfFile);
+        }
+
+        let first_token = tokens[0];
+
+        *tokens = &tokens[1..];
+
+        match first_token.kind() {
+            TokenKind::Identifier => {
+                let correlation_name = self.parse_correlation_name_optional(input, tokens)?;
+                return Ok(TableReference::Primary(
+                    TablePrimary {
+                        kind: TablePrimaryKind::TableOrQueryName(first_token.as_string(input).to_owned()),
+                        correlation_name,
+                    }
+                ))
+            }
+
+            TokenKind::Keyword(keyword) => Err(StatementParseError::TableReferenceUnexpectedKeyword {
+                found: first_token.as_string(input),
+                keyword
+            }),
+
+            _ => Err(StatementParseError::TableReferenceUnexpectedToken {
+                found: first_token.as_string(input),
+                token_kind: first_token.kind()
+            })
+        }
+    }
 }
 
 /// Describes an error in parsing a statement.
 #[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty)]
 pub enum StatementParseError<'input> {
-    #[error("unexpected keyword: {token_kind:?}: `{found}`.\n`CREATE` keyword not followed by either TABLE, VIEW, SCHEMA or DATABASE")]
+    #[error("unexpected end-of-file: expected identifier as the correlation name (alias)")]
+    CorrelationNameUnexpectedEndOfFile,
+
+    #[error("unexpected keyword: `{keyword}` (`{found}`): expected an identifier as the name of the correlation name (alias)")]
+    #[strum(props(Hint="Did you forget to escape the identifier?"))]
+    CorrelationNameUnexpectedKeyword {
+        found: &'input str,
+        keyword: Keyword,
+    },
+
+    #[error("unexpected token: `{token_kind}` (`{found}`): expected the name of the correlation name (alias)")]
+    CorrelationNameUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind
+    },
+
+    #[error("unexpected keyword: {token_kind:?}: `{found}`")]
+    #[strum(props(Help="`CREATE` keyword not followed by either TABLE, VIEW, SCHEMA or DATABASE"))]
     CreateStatementUnexpectedFollowUpToken {
         found: &'input str,
         token_kind: TokenKind,
@@ -426,6 +604,15 @@ pub enum StatementParseError<'input> {
 
     #[error("unexpected end-of-file: expected a <select list>, but end of statement reached. Expected either the wildcard '*' expression or a <value expression>")]
     EofSelectList(&'input str),
+
+    #[error("unexpected end-of-file, expected FROM clause")]
+    FromClauseUnexpectedEof,
+
+    #[error("unexpected token {token_kind}: `{found}`, expected FROM clause")]
+    FromClauseUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
 
     #[error("unexpected token {token_kind:?}: `{found}`")]
     SelectStatementUnexpectedToken {
@@ -519,6 +706,24 @@ pub enum StatementParseError<'input> {
     TableElementsUnexpectedSemicolon {
         found: &'input str,
     },
+
+    #[error("unexpected end-of-file, expected a table reference")]
+    #[strum(props(Hint="Did you forget to add a table name?"))]
+    TableReferenceUnexpectedEndOfFile,
+
+    #[error("unexpected keyword: {keyword} (`{found}`), expected a table reference")]
+    #[strum(props(Hint="Did you forget to escape the table or schema name?"))]
+    #[strum(props(Help="`{keyword}` is reserved as a keyword"))]
+    TableReferenceUnexpectedKeyword {
+        found: &'input str,
+        keyword: Keyword
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected a table reference")]
+    TableReferenceUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
 }
 
 #[cfg(test)]
@@ -578,6 +783,91 @@ mod tests {
         );
 
         assert_eq!(parser.parse_statement(input), Ok(expected));
+    }
+
+    fn parser_select_statement_erroneous_base<'input>(input: &'input str, expected: StatementParseError<'input>) {
+        assert_eq!(Parser::new().parse_statement(input), Err(expected));
+    }
+
+    /// Can't select every column from every table unfortunately.
+    ///
+    /// However, it would be cool to implement something like this for some
+    /// savages that want to search the whole schema / database.
+    ///
+    /// Syntactically, this can be implemented with a function, something like
+    /// `ALL_TABLES_COMBINED()`?
+    #[rstest]
+    #[case("SELECT * FROM *", 14)]
+    #[case("SELECT * FROM *;", 14)]
+    #[case("SELECT * FROM    *", 17)]
+    #[case("SELECT * FROM table1, *", 22)]
+    #[case("SELECT * FROM  *,  ttceis8800;", 15)]
+    #[test]
+    fn parser_select_statement_erroneous_from_asterisk(#[case] input: &str, #[case] idx: usize) {
+        parser_select_statement_erroneous_base(input, StatementParseError::TableReferenceUnexpectedToken {
+            found: &input[idx..=idx],
+            token_kind: TokenKind::Asterisk
+        });
+    }
+
+    #[rstest]
+    #[case("SELECT * FROM my_table", &["my_table"], &[None])]
+    #[case("SELECT * FROM ends_with_semicolon;", &["ends_with_semicolon"], &[None])]
+    #[case("SELECT * FROM correlation AS corr;", &["correlation"], &[Some("corr")])]
+    #[case("SELECT * FROM my_table AS tbl", &["my_table"], &[Some("tbl")])]
+    #[case("SELECT * FROM table1, table2", &["table1", "table2"], &[None, None])]
+    // This is an evaluation error, not a parse error.
+    #[case("SELECT * FROM table1, table2 AS table1", &["table1", "table2"], &[None, Some("table1")])]
+    #[case("SELECT * FROM table1 AS table3, table2", &["table1", "table2"], &[Some("table3"), None])]
+    #[case("SELECT * FROM t1 AS t5, t2 as t78", &["t1", "t2"], &[Some("t5"), Some("t78")])]
+    fn parser_simple_select_from_statement(#[case] input: &str, #[case] table_names: &[&str], #[case] correlation_names: &[Option<&str>]) {
+        let result = Parser::new().parse_statement(input);
+        if let Err(e) = &result {
+            println!("Failed: {}", e);
+        }
+
+        let mut table_references = Vec::with_capacity(table_names.len());
+
+        for (index, name) in table_names.iter().enumerate() {
+            let correlation_name = correlation_names[index];
+            table_references.push(
+                TableReference::Primary(
+                    TablePrimary {
+                        kind: TablePrimaryKind::TableOrQueryName(name.to_string()),
+                        correlation_name: correlation_name.map(|s| s.to_string())
+                    }
+                )
+            );
+        }
+
+        let from_clause = FromClause {
+            table_references
+        };
+
+        let body = QueryExpressionBody::SimpleTable(
+            SimpleTable::QuerySpecification(
+                QuerySpecification {
+                    set_quantifier: SetQuantifier::All,
+                    select_list: SelectList::Asterisk,
+                    table_expression: Some(TableExpression {
+                        from_clause,
+                        where_clause: None,
+                        group_by_clause: None,
+                        having_clause: None
+                    })
+                }
+            )
+        );
+
+        let expected = SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::SelectStatement(
+                QueryExpression {
+                    body
+                }
+            )
+        );
+
+        assert_eq!(result.unwrap(), expected);
     }
 
     #[rstest]
