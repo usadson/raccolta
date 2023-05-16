@@ -1,10 +1,9 @@
 [package]
-name = "raccolta-shell"
+name = "raccolta-engine"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-raccolta-engine = { path = "../raccolta-engine" }
 raccolta-syntax = { path = "../raccolta-syntax" }
 
 strum = { version = "*", features = [ "derive" ] }

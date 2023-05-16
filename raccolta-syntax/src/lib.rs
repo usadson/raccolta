@@ -1,15 +1,15 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-mod clause;
-mod common;
-mod expression;
-mod keyword;
-mod parse;
-mod schema;
-mod set_function;
-mod statement;
-mod token;
+pub mod clause;
+pub mod common;
+pub mod expression;
+pub mod keyword;
+pub mod parse;
+pub mod schema;
+pub mod set_function;
+pub mod statement;
+pub mod token;
 
 pub use keyword::Keyword;
 pub use token::{Token, TokenKind};

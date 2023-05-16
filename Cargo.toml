@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "raccolta-engine",
     "raccolta-shell",
     "raccolta-syntax",
 ]
