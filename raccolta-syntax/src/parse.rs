@@ -3,7 +3,7 @@
 
 mod extensions;
 
-use strum::EnumProperty;
+use strum::{EnumProperty, AsRefStr};
 use thiserror::Error;
 
 use crate::expression::QuerySpecification;
@@ -605,7 +605,7 @@ impl Parser {
 }
 
 /// Describes an error in parsing a statement.
-#[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty)]
+#[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty, AsRefStr)]
 pub enum StatementParseError<'input> {
     #[error("unexpected end-of-file: expected identifier as the correlation name (alias)")]
     CorrelationNameUnexpectedEndOfFile,

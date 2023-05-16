@@ -1,12 +1,12 @@
 [package]
-name = "raccolta-syntax"
+name = "raccolta-shell"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-serde = { version = "*", features = [ "derive" ] }
+raccolta-syntax = { path = "../raccolta-syntax" }
+
 strum = { version = "*", features = [ "derive" ] }
-thiserror = "*"
 
 [dev-dependencies]
 pretty_assertions = "*"
