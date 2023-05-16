@@ -8,6 +8,13 @@ use crate::syntax::clause::{
     WhereClause,
 };
 
+/// ```text
+/// <table expression> ::=
+///     <from clause>
+///     [ <where clause> ]
+///     [ <group by clause> ]
+///     [ <having clause> ]
+/// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableExpression {
     pub from_clause: FromClause,
