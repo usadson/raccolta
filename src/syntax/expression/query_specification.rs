@@ -3,15 +3,18 @@
 
 use crate::syntax::set_function::SetQuantifier;
 
-use super::TableExpression;
+use super::{TableExpression, ValueExpression};
 
 /// ```text
 /// <derived column> ::=
 ///     <value expression> [ <as clause> ]
 /// ```
 #[derive(Clone, Debug, PartialEq)]
-pub enum DerivedColumn {
+pub struct DerivedColumn {
+    pub value_expression: ValueExpression,
 
+    /// The `<as clause> <column name>`
+    pub alias: Option<String>,
 }
 
 /// ```text
