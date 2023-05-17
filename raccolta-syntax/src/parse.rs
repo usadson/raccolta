@@ -1010,7 +1010,7 @@ pub enum StatementParseError<'input> {
     },
 
     #[error("unexpected token {token_kind} (`{found}`), expected `VALUES` keyword")]
-    #[strum(props(Help="Did you forget to begin the rows with the `VALUES` keyword?"))]
+    #[strum(props(Hint="Did you forget to begin the rows with the `VALUES` keyword?"))]
     #[strum(props(Help="Insert the `VALUES` keyword, followed by one or more column data lists"))]
     InsertColumnsAndSourceUnexpectedToken {
         found: &'input str,

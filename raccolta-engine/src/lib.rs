@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+mod insert;
 mod table;
 
 use std::{
@@ -9,16 +10,26 @@ use std::{
 };
 
 use raccolta_syntax::{
+    expression::data_type::{
+        DataType,
+        NumericType,
+        PredefinedType,
+    },
     schema::definition::table_definition::{
         TableDefinition,
         ColumnDefinition,
         TableElement,
     },
     statement::{
+        insert_statement::{
+            InsertStatement, InsertColumnsAndSource,
+        },
+        SqlDataStatement,
+        SqlDataChangeStatement,
         SqlExecutableStatement,
         SqlSchemaDefinitionStatement,
         SqlSchemaStatement,
-    }, expression::data_type::{DataType, PredefinedType, NumericType},
+    },
 };
 
 use table::{
@@ -58,7 +69,52 @@ impl Engine {
 
         match statement {
             SqlExecutableStatement::Schema(statement) => self.execute_statement_schema(statement),
+            SqlExecutableStatement::SqlDataStatement(statement) => self.execute_statement_data(statement),
+        }
+    }
+
+    fn execute_statement_data(&mut self, statement: SqlDataStatement) -> EngineResult {
+        match statement {
+            SqlDataStatement::ChangeStatement(statement) => self.execute_statement_data_change(statement),
             _ => self.execute_unsupported_statement(),
+        }
+    }
+
+    fn execute_statement_data_change(&mut self, statement: SqlDataChangeStatement) -> EngineResult {
+        match statement {
+            SqlDataChangeStatement::Insert(statement) => self.execute_statement_data_change_insert(statement),
+        }
+    }
+
+    /// Executes the `INSERT INTO` statement.
+    fn execute_statement_data_change_insert(&mut self, statement: InsertStatement) -> EngineResult {
+        if self.tables.is_empty() {
+            return EngineResult {
+                messages: vec![
+                    EngineMessage::Error("Failed to insert since there are no tables yet!".into())
+                ],
+                row_count: 0,
+                row_iterator: Box::new(std::iter::empty())
+            };
+        }
+
+        let table_ref = self.tables.iter_mut()
+            .find(|table| table.name.eq_ignore_ascii_case(&statement.table_name.table_qualifier));
+
+        let Some(table_ref) = table_ref else {
+            return EngineResult {
+                messages: vec![
+                    EngineMessage::Error(format!("Unknown table named \"{}\"", statement.table_name.table_qualifier).into())
+                ],
+                row_count: 0,
+                row_iterator: Box::new(std::iter::empty())
+            };
+        };
+
+        match statement.insert_columns_and_source {
+            InsertColumnsAndSource::FromConstructor { constructor, .. } => {
+                insert::execute_from_contextually_typed_table_value_constructor(table_ref, constructor)
+            }
         }
     }
 
@@ -165,6 +221,16 @@ pub struct EngineResult {
 
     pub row_count: usize,
     pub row_iterator: Box<dyn Iterator<Item = EngineRow>>,
+}
+
+impl EngineResult {
+    pub fn with_messages(messages: Vec<EngineMessage>) -> Self {
+        Self {
+            messages,
+            row_count: 0,
+            row_iterator: Box::new(std::iter::empty()),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
