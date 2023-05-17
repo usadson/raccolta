@@ -5,6 +5,7 @@ pub mod data_type;
 pub mod numeric_value_expression;
 pub mod query_expression;
 pub mod query_specification;
+pub mod row_value_constructor;
 pub mod table_expression;
 pub mod table_reference;
 pub mod value_expression;
