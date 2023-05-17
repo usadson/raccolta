@@ -17,5 +17,5 @@
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableName {
     /// `<qualified identifier>`
-    table_qualifier: String,
+    pub table_qualifier: String,
 }

@@ -56,3 +56,18 @@ impl ParseArrayExtensions for [Token] {
         *self = &self[1..];
     }
 }
+
+pub(super) trait ParseStringExtensions {
+    /// Get an empty slice, pointing at the end of the string, past the last
+    /// character.
+    ///
+    /// This is useful for getting a lifetime to `self` and marking an EOF
+    /// point.
+    fn slice_empty_end<'a>(&'a self) -> &'a Self;
+}
+
+impl ParseStringExtensions for str {
+    fn slice_empty_end<'a>(&'a self) -> &'a Self {
+        &self[(self.len() - 1)..]
+    }
+}

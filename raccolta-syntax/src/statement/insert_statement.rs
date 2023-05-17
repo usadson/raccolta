@@ -55,7 +55,10 @@
 //! <empty specification> ::= ARRAY <left bracket or trigraph> <right bracket or trigraph>
 //! ```
 
-use crate::common::TableName;
+use crate::{
+    common::TableName,
+    expression::table_value_constructor::ContextuallyTypedTableValueConstructor,
+};
 
 /// ```text
 //// <insert columns and source> ::=
@@ -92,6 +95,7 @@ use crate::common::TableName;
 pub enum InsertColumnsAndSource {
     FromConstructor {
         insert_column_list: Option<Vec<String>>,
+        constructor: ContextuallyTypedTableValueConstructor,
     }
 }
 

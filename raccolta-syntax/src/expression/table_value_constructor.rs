@@ -26,6 +26,7 @@ use crate::expression::row_value_expression::ContextuallyTypedRowValueExpression
 ///     <contextually typed row value expression>
 ///     [ { <comma> <contextually typed row value expression> }... ]
 /// ```
+#[derive(Clone, Debug, PartialEq)]
 pub struct ContextuallyTypedTableValueConstructor {
     pub values: Vec<ContextuallyTypedRowValueExpression>,
 }

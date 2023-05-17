@@ -6,28 +6,37 @@ mod extensions;
 use strum::{EnumProperty, AsRefStr};
 use thiserror::Error;
 
-use crate::expression::QuerySpecification;
-
-use super::{
+use crate::{
     clause::FromClause,
+    common::TableName,
     expression::{
         data_type::{
             DataType,
             NumericType,
             PredefinedType,
         },
-        query_specification::{SelectList, SelectSublist, DerivedColumn},
+        NumericValueExpression,
+        query_specification::{
+            QuerySpecification,
+            DerivedColumn,
+            SelectList,
+            SelectSublist,
+        },
         query_expression::{
             QueryExpression,
             QueryExpressionBody,
             SimpleTable,
         },
+        row_value_constructor::{ContextuallyTypedRowValueConstructor, ContextuallyTypedRowValueConstructorElement},
+        row_value_expression::ContextuallyTypedRowValueExpression,
         TableExpression,
         table_reference::{
             TablePrimary,
             TablePrimaryKind,
             TableReference,
-        }, ValueExpression, NumericValueExpression,
+        },
+        table_value_constructor::ContextuallyTypedTableValueConstructor,
+        ValueExpression,
     },
     Keyword,
     Lexer,
@@ -38,6 +47,11 @@ use super::{
     },
     set_function::SetQuantifier,
     statement::{
+        insert_statement::{
+            InsertColumnsAndSource,
+            InsertStatement,
+        },
+        SqlDataChangeStatement,
         SqlDataStatement,
         SqlExecutableStatement,
         SqlSchemaDefinitionStatement,
@@ -48,6 +62,8 @@ use super::{
 };
 
 use extensions::ParseArrayExtensions;
+
+use self::extensions::ParseStringExtensions;
 
 pub struct Parser {
 
@@ -71,6 +87,123 @@ impl Parser {
         Self {
             // ...
         }
+    }
+
+    /// ```text
+    /// <contextually typed row value constructor> ::=
+    ///       <contextually typed row value constructor element>
+    ///     | [ ROW ]
+    ///         <left paren>
+    ///             <contextually typed row value constructor element list>
+    ///         <right paren>
+    ///
+    /// <contextually typed row value constructor element list> ::=
+    ///     <contextually typed row value constructor element>
+    ///     [ { <comma> <contextually typed row value constructor element> }... ]
+    /// ```
+    fn parse_contextually_typed_row_value_constructor<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ContextuallyTypedRowValueConstructor, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFile {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::LeftParenthesis {
+            return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedLeftParen {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        let mut constructor = ContextuallyTypedRowValueConstructor {
+            elements: Vec::new(),
+        };
+
+        loop {
+            let element = self.parse_contextually_typed_row_value_constructor_element(input, tokens)?;
+            constructor.elements.push(element);
+
+            if is_end_of_statement(tokens) {
+                return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen {
+                    found: input.slice_empty_end(),
+                });
+            }
+
+            let separator_token = tokens[0];
+            *tokens = &tokens[1..];
+
+            match separator_token.kind() {
+                TokenKind::Comma => continue,
+                TokenKind::RightParenthesis => break,
+                _ => return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedCommaOrRightParen {
+                    found: separator_token.as_string(input),
+                    token_kind: separator_token.kind()
+                })
+            }
+        }
+
+        Ok(constructor)
+    }
+
+    /// ```text
+    /// <contextually typed row value constructor element> ::=
+    ///       <value expression>
+    ///     | <contextually typed value specification>
+    /// ```
+    fn parse_contextually_typed_row_value_constructor_element<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ContextuallyTypedRowValueConstructorElement, StatementParseError<'input>> {
+        Ok(ContextuallyTypedRowValueConstructorElement::ValueExpression(
+            self.parse_value_expression(input, tokens)?
+        ))
+    }
+
+    /// ```text
+    /// <contextually typed row value expression> ::=
+    ///       <row value special case>
+    ///     | <contextually typed row value constructor>
+    ///
+    /// <row value special case> ::=
+    ///       <value specification>
+    ///     | <value expression>
+    /// ```
+    fn parse_contextually_typed_row_value_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ContextuallyTypedRowValueExpression, StatementParseError<'input>> {
+        Ok(ContextuallyTypedRowValueExpression::ContextuallyTypedRowValueConstructor(
+            self.parse_contextually_typed_row_value_constructor(input, tokens)?
+        ))
+    }
+
+    /// After the `VALUES` keyword was consumed, this function is invoked by
+    /// [`Parser::parse_insert_columns_and_source()`].
+    ///
+    /// ```text
+    /// <contextually typed table value constructor> ::=
+    ///     VALUES <contextually typed row value expression list>
+    ///
+    /// <contextually typed row value expression list> ::=
+    ///     <contextually typed row value expression>
+    ///     [ { <comma> <contextually typed row value expression> }... ]
+    /// ```
+    fn parse_contextually_typed_table_value_constructor<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ContextuallyTypedTableValueConstructor, StatementParseError<'input>> {
+        let mut constructor = ContextuallyTypedTableValueConstructor {
+            values: Vec::new(),
+        };
+
+        loop {
+            constructor.values.push(self.parse_contextually_typed_row_value_expression(input, tokens)?);
+
+            if is_end_of_statement(tokens) {
+                break;
+            }
+
+            if tokens[0].kind() != TokenKind::Comma {
+                break;
+            }
+
+            *tokens = &tokens[1..];
+        }
+
+        Ok(constructor)
     }
 
     /// Parse an optional `<correlation name>`. A correlation name is an alias
@@ -101,6 +234,36 @@ impl Parser {
         }
     }
 
+    /// Parse the `<insert columns and source>` section.
+    fn parse_insert_columns_and_source<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<InsertColumnsAndSource, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::InsertColumnsAndSourceUnexpectedEndOfFileAtBeginning {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        match tokens[0].kind() {
+            TokenKind::Keyword(Keyword::Values) => {
+                *tokens = &tokens[1..];
+
+                Ok(InsertColumnsAndSource::FromConstructor {
+                    insert_column_list: None,
+                    constructor: self.parse_contextually_typed_table_value_constructor(input, tokens)?,
+                })
+            }
+
+            TokenKind::Keyword(keyword) => Err(StatementParseError::InsertColumnsAndSourceUnexpectedKeyword {
+                found: tokens[0].as_string(input),
+                keyword,
+            }),
+
+            _ => Err(StatementParseError::InsertColumnsAndSourceUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            }),
+        }
+    }
+
     /// Parses a statement.
     pub fn parse_statement<'input>(&self, input: &'input str) -> StatementResult<'input> {
         let mut lexer = Lexer::new(input);
@@ -120,6 +283,7 @@ impl Parser {
 
         match keyword {
             Keyword::Create => self.parse_statement_create(input, &tokens),
+            Keyword::Insert => self.parse_statement_insert(input, &tokens),
             Keyword::Select => self.parse_statement_select(input, &tokens),
 
             _ => Err(StatementParseError::StartUnknownKeyword {
@@ -249,6 +413,74 @@ impl Parser {
             found: tokens[0].as_string(input),
             token_kind: tokens[0].kind(),
         });
+    }
+
+    /// Parses the rest of the statement when the first token was the
+    /// **`INSERT`** identifier keyword.
+    fn parse_statement_insert<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::InsertStatementEndOfFile {
+                found: input.slice_empty_end()
+            });
+        }
+
+        match tokens[0].kind() {
+            TokenKind::Keyword(Keyword::Into) => self.parse_statement_insert_into(input, &tokens[1..]),
+
+            TokenKind::Keyword(keyword) => Err(StatementParseError::InsertStatementUnexpectedKeyword {
+                found: tokens[0].as_string(input),
+                keyword,
+            }),
+
+            _ => Err(StatementParseError::InsertStatementUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            })
+        }
+    }
+
+    /// Parses the rest of the statement when the first tokens were the
+    /// **`INSERT INTO`** identifier keywords.
+    fn parse_statement_insert_into<'input>(&self, input: &'input str, mut tokens: &[Token]) -> StatementResult<'input> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::InsertIntoStatementEndOfFile {
+                found: &input[(input.len() - 1)..]
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::Identifier {
+            return Err(StatementParseError::InsertIntoStatementUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            })
+        }
+
+        let table_name = tokens[0].as_string(input);
+        tokens = &tokens[1..];
+
+        let insert_columns_and_source = self.parse_insert_columns_and_source(input, &mut tokens)?;
+
+        if !is_end_of_statement(tokens) {
+            return Err(StatementParseError::InsertIntoStatementUnexpectedTrailingToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        let statement = InsertStatement {
+            table_name: TableName {
+                table_qualifier: table_name.to_owned()
+            },
+            insert_columns_and_source
+        };
+
+        Ok(SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::ChangeStatement(
+                SqlDataChangeStatement::Insert(
+                    statement
+                )
+            )
+        ))
     }
 
     /// Parses the rest of the statement when the first token was the
@@ -647,8 +879,44 @@ impl Parser {
 }
 
 /// Describes an error in parsing a statement.
+///
+/// # To Do
+/// TODO: it would be very cool to match these parenthesis, something like:
+/// ```text
+/// INSERT INTO table1
+/// VALUES (1, 2
+///        ^    ^ error occurred here
+///        |
+///        `- to match this value here
+/// ```
 #[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty, AsRefStr)]
 pub enum StatementParseError<'input> {
+    #[error("unexpected end-of-file: expected `(` to start contextually typed row value constructor")]
+    #[strum(props(Hint="Did you forget to add a row value constructor, or mistyped the last comma `,`?"))]
+    ContextuallyTypedRowValueConstructorUnexpectedEndOfFile {
+        found: &'input str,
+    },
+
+    #[error("unexpected end-of-file: expected `)` to end the row value constructor")]
+    #[strum(props(Hint="Did you forget to add a row value constructor, or mistyped the last comma `,`?"))]
+    ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen {
+        found: &'input str,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected comma `,` or closing parenthesis `(`")]
+    #[strum(props(Hint="Did you forget to add a comma `,` to add another column, or `)` to close this row?"))]
+    ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedCommaOrRightParen {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected opening parenthesis `(`")]
+    #[strum(props(Hint="Did you forget to add a row value constructor, or mistyped the last comma `,`?"))]
+    ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedLeftParen {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
     #[error("unexpected end-of-file: expected identifier as the correlation name (alias)")]
     CorrelationNameUnexpectedEndOfFile,
 
@@ -726,7 +994,73 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
-    #[error("unexpected token {token_kind:?}: `{found}`")]
+    /// TODO: when column source information is parsed, this should be changed
+    ///       to also hint at the insertion of `( column name, ... )`
+    #[error("unexpected end-of-file, expected `VALUES` keyword")]
+    #[strum(props(Help="Insert the `VALUES` keyword, followed by one or more column data lists"))]
+    InsertColumnsAndSourceUnexpectedEndOfFileAtBeginning {
+        found: &'input str,
+    },
+
+    #[error("unexpected keyword {keyword} (`{found}`), expected `VALUES` keyword")]
+    #[strum(props(Help="Replace this with the `VALUES` keyword"))]
+    InsertColumnsAndSourceUnexpectedKeyword {
+        found: &'input str,
+        keyword: Keyword,
+    },
+
+    #[error("unexpected token {token_kind} (`{found}`), expected `VALUES` keyword")]
+    #[strum(props(Help="Did you forget to begin the rows with the `VALUES` keyword?"))]
+    #[strum(props(Help="Insert the `VALUES` keyword, followed by one or more column data lists"))]
+    InsertColumnsAndSourceUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected end-of-file, expected `INTO` keyword")]
+    #[strum(props(Hint="`INSERT` on its own isn't a statement, but it is the start of the `INSERT INTO` statement, which allows you to insert one or more rows into a table"))]
+    #[strum(props(Help="Append the `INTO` keyword: `INSERT INTO`"))]
+    InsertStatementEndOfFile {
+        found: &'input str,
+    },
+
+    #[error("unexpected keyword {keyword} (`{found}`), expected `INTO` keyword")]
+    #[strum(props(Hint="`INSERT` must be followed by the `INTO` keyword."))]
+    #[strum(props(Help="Replace it with the `INTO` keyword: `INSERT INTO`"))]
+    InsertStatementUnexpectedKeyword {
+        found: &'input str,
+        keyword: Keyword,
+    },
+
+    #[error("unexpected token {token_kind} (`{found}`), expected `INTO` keyword")]
+    #[strum(props(Hint="`INSERT` must be followed by the `INTO` keyword."))]
+    #[strum(props(Help="Insert the `INTO` keyword: `INSERT INTO`"))]
+    InsertStatementUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected end-of-file, expected the name of the table to insert into")]
+    #[strum(props(Help="Append the a table name wherein you want to insert data to."))]
+    InsertIntoStatementEndOfFile {
+        found: &'input str,
+    },
+
+    #[error("unexpected token {token_kind} (`{found}`), expected the name of the table to insert into")]
+    #[strum(props(Help="Append the a table name wherein you want to insert data to: `INSERT INTO table_name_here`"))]
+    InsertIntoStatementUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected trailing token in `INSERT TABLE`: {token_kind} (`{found}`)")]
+    #[strum(props(Hint="This isn't a known clause of the `INSERT INTO` statement."))]
+    InsertIntoStatementUnexpectedTrailingToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token {token_kind}: `{found}`")]
     SelectStatementUnexpectedToken {
         found: &'input str,
         token_kind: TokenKind,
@@ -861,6 +1195,10 @@ impl<'input> StatementParseError<'input> {
     /// input the error was encountered.
     pub fn found(&self) -> Option<&'input str> {
         match self {
+            StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFile { found, .. } => Some(found),
+            StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen { found, .. } => Some(found),
+            StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedCommaOrRightParen { found, .. } => Some(found),
+            StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedLeftParen { found, .. } => Some(found),
             StatementParseError::CorrelationNameUnexpectedEndOfFile => None,
             StatementParseError::CorrelationNameUnexpectedKeyword { found, .. } => Some(found),
             StatementParseError::CorrelationNameUnexpectedToken { found, .. } => Some(found),
@@ -877,6 +1215,15 @@ impl<'input> StatementParseError<'input> {
             StatementParseError::EofSelectList(found) => Some(found),
             StatementParseError::FromClauseUnexpectedEof => None,
             StatementParseError::FromClauseUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::InsertColumnsAndSourceUnexpectedEndOfFileAtBeginning { found, .. } => Some(found),
+            StatementParseError::InsertColumnsAndSourceUnexpectedKeyword { found, .. } => Some(found),
+            StatementParseError::InsertColumnsAndSourceUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::InsertStatementEndOfFile { found, .. }  => Some(found),
+            StatementParseError::InsertStatementUnexpectedKeyword { found, .. } => Some(found),
+            StatementParseError::InsertStatementUnexpectedToken { found, .. }  => Some(found),
+            StatementParseError::InsertIntoStatementEndOfFile { found, .. } => Some(found),
+            StatementParseError::InsertIntoStatementUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::InsertIntoStatementUnexpectedTrailingToken { found, ..} => Some(found),
             StatementParseError::SelectStatementUnexpectedToken { found, .. } => Some(found),
             StatementParseError::StartNotAToken { found, .. } => Some(found),
             StatementParseError::StartUnknownKeyword { found, .. } => Some(found),
@@ -1023,6 +1370,84 @@ mod tests {
     }
 
     #[rstest]
+    #[case(
+        "INSERT INTO my_table VALUES (1)",
+        "my_table",
+        vec![
+            vec![
+                value_expression_simple_u64(1)
+            ]
+        ]
+    )]
+    #[case(
+        "INSERT INTO cool_numbers VALUES (1, 2, 3, 5, 8, 13)",
+        "cool_numbers",
+        vec![
+            vec![
+                value_expression_simple_u64(1),
+                value_expression_simple_u64(2),
+                value_expression_simple_u64(3),
+                value_expression_simple_u64(5),
+                value_expression_simple_u64(8),
+                value_expression_simple_u64(13),
+            ]
+        ]
+    )]
+    #[case(
+        "INSERT INTO multiple_rows VALUES (2, 4), (1, 3), (4, 8)",
+        "multiple_rows",
+        vec![
+            vec![
+                value_expression_simple_u64(2),
+                value_expression_simple_u64(4),
+            ],
+            vec![
+                value_expression_simple_u64(1),
+                value_expression_simple_u64(3),
+            ],
+            vec![
+                value_expression_simple_u64(4),
+                value_expression_simple_u64(8),
+            ],
+        ]
+    )]
+    fn parser_simple_insert_into_statement(#[case] input: &str, #[case] table_name: &str, #[case] rows: Vec<Vec<ValueExpression>>) {
+        let result = Parser::new().parse_statement(input);
+
+        let statement = InsertStatement {
+            table_name: TableName {
+                table_qualifier: table_name.to_owned(),
+            },
+            insert_columns_and_source: InsertColumnsAndSource::FromConstructor {
+                insert_column_list: None,
+                constructor: ContextuallyTypedTableValueConstructor {
+                    values: rows.iter()
+                        .map(|row| {
+                            ContextuallyTypedRowValueExpression::ContextuallyTypedRowValueConstructor(
+                                ContextuallyTypedRowValueConstructor {
+                                    elements: row.iter()
+                                        .map(|value| ContextuallyTypedRowValueConstructorElement::ValueExpression(value.clone()))
+                                        .collect()
+                                }
+                            )
+                        })
+                        .collect()
+                }
+            }
+        };
+
+        let statement = SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::ChangeStatement(
+                SqlDataChangeStatement::Insert(
+                    statement
+                )
+            )
+        );
+
+        assert_eq!(result, Ok(statement));
+    }
+
+    #[rstest]
     #[case("SELECT * FROM my_table", &["my_table"], &[None])]
     #[case("SELECT * FROM ends_with_semicolon;", &["ends_with_semicolon"], &[None])]
     #[case("SELECT * FROM correlation AS corr;", &["correlation"], &[Some("corr")])]
@@ -1098,6 +1523,13 @@ mod tests {
                 }
             )
         );
+    }
+
+    /// Create a simple u64 `<value expression>`
+    const fn value_expression_simple_u64(value: u64) -> ValueExpression {
+        ValueExpression::Numeric(
+            NumericValueExpression::SimpleU64(value)
+        )
     }
 
 }
