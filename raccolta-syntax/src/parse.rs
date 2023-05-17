@@ -805,6 +805,52 @@ pub enum StatementParseError<'input> {
     },
 }
 
+impl<'input> StatementParseError<'input> {
+    /// Get the property `found` if available. This describes where in the
+    /// input the error was encountered.
+    pub fn found(&self) -> Option<&'input str> {
+        match self {
+            StatementParseError::CorrelationNameUnexpectedEndOfFile => None,
+            StatementParseError::CorrelationNameUnexpectedKeyword { found, .. } => Some(found),
+            StatementParseError::CorrelationNameUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::CreateStatementUnexpectedFollowUpToken { found, .. } => Some(found),
+            StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedEof { found, .. } => Some(found),
+            StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword { found, .. } => Some(found),
+            StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::CreateTableUnexpectedEofAfterTableName => None,
+            StatementParseError::CreateTableUnexpectedEofAfterTableNameAndLeftParen { found, .. } => Some(found),
+            StatementParseError::CreateTableUnexpectedTokenAtEnd { found, .. } => Some(found),
+            StatementParseError::EmptyInput => None,
+            StatementParseError::EofCreateKeywordOnlyToken(found) => Some(found),
+            StatementParseError::EofSelectKeywordOnlyToken(found) => Some(found),
+            StatementParseError::EofSelectList(found) => Some(found),
+            StatementParseError::FromClauseUnexpectedEof => None,
+            StatementParseError::FromClauseUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::SelectStatementUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::StartNotAToken { found, .. } => Some(found),
+            StatementParseError::StartUnknownKeyword { found, .. } => Some(found),
+            StatementParseError::TableElementSingleExpectedKeywordAsDataType { found, .. } => Some(found),
+            StatementParseError::TableElementSingleExpectedIdentifierAsColumnName { found, .. } => Some(found),
+            StatementParseError::TableElementSingleExpectedIdentifierAsColumnNameButGotKeyword { found, .. } => Some(found),
+            StatementParseError::TableElementSingleUnexpectedEndOfFileAfterColumnName => None,
+            StatementParseError::TableElementSingleUnexpectedEndOfFileAtBeginning => None,
+            StatementParseError::TableElementSingleUnknownDataTypeKeyword { found, .. } => Some(found),
+            StatementParseError::TableElementsExpectedLeftParenthesis { found, .. } => Some(found),
+            StatementParseError::TableElementsUnexpectedClosingParenthesis { found } => Some(found),
+            StatementParseError::TableElementsUnexpectedCommaBeforeFirstColumn { found } => Some(found),
+            StatementParseError::TableElementsUnexpectedEndOfFile => None,
+            StatementParseError::TableElementsUnexpectedEndOfFileAfterComma { found } => Some(found),
+            StatementParseError::TableElementsUnexpectedEndOfFileAtBeginning => None,
+            StatementParseError::TableElementsUnexpectedSemicolon { found } => Some(found),
+            StatementParseError::TableReferenceUnexpectedEndOfFile => None,
+            StatementParseError::TableReferenceUnexpectedKeyword { found, .. } => Some(found),
+            StatementParseError::TableReferenceUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::ValueExpressionUnexpectedEndOfFile => None,
+            StatementParseError::ValueExpressionUnexpectedToken { found, .. } => Some(found),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ops::{

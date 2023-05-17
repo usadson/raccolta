@@ -1,10 +1,38 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use std::io::Write;
+use std::{io::Write, ops::Range};
 
 use raccolta_engine::EngineMessage;
 use strum::EnumProperty;
+
+/// Let's say
+/// haystack = "hello"
+/// needle = "ll"
+///
+/// haystack_begin = 0
+/// haystack_end = 5
+///
+/// needle_begin = 2
+/// needle_end = 4
+fn get_range_of_string_slice(haystack: &str, needle: &str) -> Option<Range<usize>> {
+    if haystack.len() < needle.len() {
+        return None;
+    }
+
+    let haystack_begin = haystack.as_ptr() as usize;
+    let haystack_end = haystack.as_ptr() as usize + haystack.len();
+
+    let needle_begin = needle.as_ptr() as usize;
+    let needle_end = needle.as_ptr() as usize + needle.len();
+
+    if haystack_begin > needle_begin || haystack_end < needle_end {
+        return None;
+    }
+
+    let start = needle_begin - haystack_begin;
+    Some(start..(start + needle.len()))
+}
 
 fn main() {
     println!("Raccolta Shell\n");
@@ -37,7 +65,15 @@ fn main() {
                 println!("{} row(s)", result.row_count);
             }
             Err(e) => {
-                println!("Error({}): {e}", e.as_ref());
+                println!("Error({}): {e}\n", e.as_ref());
+
+                if let Some(found) = e.found() {
+                    if let Some(range) = get_range_of_string_slice(&line, found) {
+                        println!("Error occurred here: ");
+                        println!("  {line}");
+                        println!("  {}{}", " ".repeat(range.start), "^".repeat(range.end - range.start));
+                    }
+                }
 
                 if let Some(hint) = e.get_str("Hint") {
                     println!("Hint: {hint}");
