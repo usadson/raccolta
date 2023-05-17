@@ -9,6 +9,7 @@ pub mod row_value_constructor;
 pub mod row_value_expression;
 pub mod table_expression;
 pub mod table_reference;
+pub mod table_value_constructor;
 pub mod value_expression;
 
 pub use query_specification::QuerySpecification;
