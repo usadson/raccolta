@@ -8,13 +8,14 @@ use raccolta_syntax::expression::{
     ValueExpression,
 };
 
-use crate::EngineResult;
+use crate::{EngineResult, EngineRowColumnValue};
 
 #[derive(Debug)]
 pub struct EngineColumn {
     pub descriptor: EngineColumnDescriptor,
     pub values: EngineColumnContainer,
 }
+
 impl EngineColumn {
     pub fn append(&mut self, value: ContextuallyTypedRowValueConstructorElement) -> Result<(), EngineResult> {
         match value {

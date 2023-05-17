@@ -2,18 +2,30 @@
 // All Rights Reserved.
 
 mod insert;
+mod select;
 mod table;
 
 use std::{
     borrow::Cow,
-    fmt::Debug,
+    fmt::{
+        Debug,
+        Display,
+    },
 };
 
 use raccolta_syntax::{
-    expression::data_type::{
-        DataType,
-        NumericType,
-        PredefinedType,
+    expression::{
+        data_type::{
+            DataType,
+            NumericType,
+            PredefinedType,
+        },
+        QueryExpression,
+        QuerySpecification,
+        table_reference::{
+            TablePrimaryKind,
+            TableReference,
+        },
     },
     schema::definition::table_definition::{
         TableDefinition,
@@ -22,7 +34,8 @@ use raccolta_syntax::{
     },
     statement::{
         insert_statement::{
-            InsertStatement, InsertColumnsAndSource,
+            InsertStatement,
+            InsertColumnsAndSource,
         },
         SqlDataStatement,
         SqlDataChangeStatement,
@@ -76,6 +89,8 @@ impl Engine {
     fn execute_statement_data(&mut self, statement: SqlDataStatement) -> EngineResult {
         match statement {
             SqlDataStatement::ChangeStatement(statement) => self.execute_statement_data_change(statement),
+            SqlDataStatement::SelectStatement(statement) => self.execute_statement_select(statement),
+
             _ => self.execute_unsupported_statement(),
         }
     }
@@ -89,26 +104,18 @@ impl Engine {
     /// Executes the `INSERT INTO` statement.
     fn execute_statement_data_change_insert(&mut self, statement: InsertStatement) -> EngineResult {
         if self.tables.is_empty() {
-            return EngineResult {
-                messages: vec![
-                    EngineMessage::Error("Failed to insert since there are no tables yet!".into())
-                ],
-                row_count: 0,
-                row_iterator: Box::new(std::iter::empty())
-            };
+            return EngineResult::with_messages(vec![
+                EngineMessage::Error("Failed to insert since there are no tables yet!".into())
+            ]);
         }
 
         let table_ref = self.tables.iter_mut()
             .find(|table| table.name.eq_ignore_ascii_case(&statement.table_name.table_qualifier));
 
         let Some(table_ref) = table_ref else {
-            return EngineResult {
-                messages: vec![
-                    EngineMessage::Error(format!("Unknown table named \"{}\"", statement.table_name.table_qualifier).into())
-                ],
-                row_count: 0,
-                row_iterator: Box::new(std::iter::empty())
-            };
+            return EngineResult::with_messages(vec![
+                EngineMessage::Error(format!("Unknown table named \"{}\"", statement.table_name.table_qualifier).into())
+            ]);
         };
 
         match statement.insert_columns_and_source {
@@ -137,14 +144,10 @@ impl Engine {
     fn execute_statement_schema_definition_table(&mut self, statement: TableDefinition) -> EngineResult {
         for table in &self.tables {
             if table.name.eq_ignore_ascii_case(&statement.table_name) {
-                return EngineResult {
-                    messages: vec![
-                        EngineMessage::Error("A table with this name already exists".into()),
-                        EngineMessage::Hint("Table names are case-insensitive, try to come up with a different name! :)".into())
-                    ],
-                    row_count: 0,
-                    row_iterator: Box::new(std::iter::empty())
-                };
+                return EngineResult::with_messages(vec![
+                    EngineMessage::Error("A table with this name already exists".into()),
+                    EngineMessage::Hint("Table names are case-insensitive, try to come up with a different name! :)".into())
+                ]);
             }
         }
 
@@ -156,15 +159,11 @@ impl Engine {
             };
 
             let Some(values) = self.create_value_container_for_column(&column) else {
-                return EngineResult {
-                    messages: vec![
-                        EngineMessage::Error(format!("Failed to create column container for \"{}\"", column.column_name).into()),
-                        EngineMessage::Error(format!("DataType is unsupported at the moment: {:#?}", column.data_type).into()),
-                        EngineMessage::Help("You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md".into()),
-                    ],
-                    row_count: 0,
-                    row_iterator: Box::new(std::iter::empty()),
-                }
+                return EngineResult::with_messages(vec![
+                    EngineMessage::Error(format!("Failed to create column container for \"{}\"", column.column_name).into()),
+                    EngineMessage::Error(format!("DataType is unsupported at the moment: {:#?}", column.data_type).into()),
+                    EngineMessage::Help("You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md".into()),
+                ]);
             };
 
             columns.push(EngineColumn {
@@ -181,28 +180,60 @@ impl Engine {
             columns
         });
 
-        EngineResult {
-            messages: vec![
-                EngineMessage::Informational("New table successfully created.".into()),
-                EngineMessage::Informational(format!("DEBUG: Internal Representation of table: {:#?}", self.tables.last().unwrap()).into())
-            ],
-            row_count: 0,
-            row_iterator: Box::new(std::iter::empty()),
+        EngineResult::with_messages(vec![
+            EngineMessage::Informational("New table successfully created.".into()),
+            EngineMessage::Informational(format!("DEBUG: Internal Representation of table: {:#?}", self.tables.last().unwrap()).into())
+        ])
+    }
+
+    fn execute_statement_select(&mut self, statement: QueryExpression) -> EngineResult {
+        match statement.body {
+            raccolta_syntax::expression::query_expression::QueryExpressionBody::SimpleTable(simple_table) => {
+                match simple_table {
+                    raccolta_syntax::expression::query_expression::SimpleTable::QuerySpecification(query_specification) => {
+                        self.execute_statement_select_simple_table_query_specification(query_specification)
+                    }
+                }
+            }
+            _ => self.execute_unsupported_statement()
         }
+    }
+
+    fn execute_statement_select_simple_table_query_specification(&self, query_specification: QuerySpecification) -> EngineResult {
+        let Some(table_expression) = &query_specification.table_expression else {
+            return self.execute_unsupported_statement();
+        };
+
+        if table_expression.from_clause.table_references.len() != 1 {
+            return self.execute_unsupported_statement();
+        }
+
+        let table_name = match &table_expression.from_clause.table_references[0] {
+            TableReference::Primary(primary) => match &primary.kind {
+                TablePrimaryKind::TableOrQueryName(name) => name
+            }
+        };
+
+        let table_ref = self.tables.iter()
+            .find(|table| table.name.eq_ignore_ascii_case(table_name));
+
+        let Some(table_ref) = table_ref else {
+            return EngineResult::with_messages(vec![
+                EngineMessage::Error(format!("Unknown table named \"{}\"", table_name).into())
+            ]);
+        };
+
+        select::execute(query_specification, table_ref)
     }
 
     /// Returns a message describing that this statement is not yet supported
     /// at the moment.
     fn execute_unsupported_statement(&self) -> EngineResult {
-        EngineResult {
-            messages: vec![
-                EngineMessage::Informational("Welcome to the Raccolta Engine!".into()),
-                EngineMessage::Error("This statement is parsed, but unfortunately not yet supported for execution by the engine.".into()),
-                EngineMessage::Help("You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md".into()),
-            ],
-            row_count: 0,
-            row_iterator: Box::new(std::iter::empty()),
-        }
+        EngineResult::with_messages(vec![
+            EngineMessage::Informational("Welcome to the Raccolta Engine!".into()),
+            EngineMessage::Error("This statement is parsed, but unfortunately not yet supported for execution by the engine.".into()),
+            EngineMessage::Help("You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md".into()),
+        ])
     }
 }
 
@@ -219,6 +250,7 @@ pub struct EngineResult {
     /// Messages generated by the engine.
     pub messages: Vec<EngineMessage>,
 
+    pub column_names: Vec<String>,
     pub row_count: usize,
     pub row_iterator: Box<dyn Iterator<Item = EngineRow>>,
 }
@@ -227,13 +259,29 @@ impl EngineResult {
     pub fn with_messages(messages: Vec<EngineMessage>) -> Self {
         Self {
             messages,
+            column_names: Vec::new(),
             row_count: 0,
             row_iterator: Box::new(std::iter::empty()),
         }
     }
 }
 
+/// A result row.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EngineRow {
+    pub values: Vec<EngineRowColumnValue>,
+}
 
+/// The value of a column in a result row.
+#[derive(Clone, Debug, PartialEq)]
+pub enum EngineRowColumnValue {
+    I32(i32),
+}
+
+impl Display for EngineRowColumnValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Self::I32(i) => Display::fmt(&i, f),
+        }
+    }
 }
