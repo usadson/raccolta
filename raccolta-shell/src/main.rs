@@ -62,6 +62,20 @@ fn main() {
                     }
                 }
 
+                if !result.column_names.is_empty() {
+                    for column_name in result.column_names {
+                        print!("{column_name}    ");
+                    }
+                    println!();
+
+                    for row in result.row_iterator {
+                        for value in row.values {
+                            print!("{value}    ");
+                        }
+                        println!();
+                    }
+                }
+
                 println!("{} row(s)", result.row_count);
             }
             Err(e) => {
