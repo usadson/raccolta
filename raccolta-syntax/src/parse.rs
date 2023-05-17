@@ -137,10 +137,10 @@ impl Parser {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Database) => return self.parse_statement_create_database(input, &tokens[1..]),
-            TokenKind::Keyword(Keyword::Schema) => return self.parse_statement_create_schema(input, &tokens[1..]),
-            TokenKind::Keyword(Keyword::Table) => return self.parse_statement_create_table(input, &tokens[1..]),
-            TokenKind::Keyword(Keyword::View) => return self.parse_statement_create_view(input, &tokens[1..]),
+            TokenKind::Keyword(Keyword::Database) => return self.parse_statement_create_database(input, tokens),
+            TokenKind::Keyword(Keyword::Schema) => return self.parse_statement_create_schema(input, tokens),
+            TokenKind::Keyword(Keyword::Table) => return self.parse_statement_create_table(input, tokens),
+            TokenKind::Keyword(Keyword::View) => return self.parse_statement_create_view(input, tokens),
 
             _ => Err(StatementParseError::CreateStatementUnexpectedFollowUpToken {
                 found: tokens[0].as_string(input),
@@ -154,7 +154,12 @@ impl Parser {
     fn parse_statement_create_database<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         _ = input;
         _ = tokens;
-        todo!("DATABASE creation is not yet supported")
+        return Err(StatementParseError::UnsupportedFeature {
+            feature_name: "CREATE DATABASE",
+            feature_description: "Creating new databases",
+            found: tokens[0].as_string(input),
+            token_kind: tokens[0].kind(),
+        });
     }
 
     /// Parses the rest of the statement when the first two tokens were
@@ -162,12 +167,20 @@ impl Parser {
     fn parse_statement_create_schema<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         _ = input;
         _ = tokens;
-        todo!("SCHEMA creation is not yet supported")
+        return Err(StatementParseError::UnsupportedFeature {
+            feature_name: "CREATE SCHEMA",
+            feature_description: "Creating new schemas",
+            found: tokens[0].as_string(input),
+            token_kind: tokens[0].kind(),
+        });
     }
 
     /// Parses the rest of the statement when the first two tokens were
     /// **`CREATE TABLE`**.
     fn parse_statement_create_table<'input>(&self, input: &'input str, mut tokens: &[Token]) -> StatementResult<'input> {
+        // Consume the `TABLE` keyword.
+        tokens = &tokens[1..];
+
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedEof { found: input });
         }
@@ -230,7 +243,12 @@ impl Parser {
     fn parse_statement_create_view<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         _ = input;
         _ = tokens;
-        todo!("VIEW creation is not yet supported")
+        return Err(StatementParseError::UnsupportedFeature {
+            feature_name: "CREATE VIEW",
+            feature_description: "Creating new views",
+            found: tokens[0].as_string(input),
+            token_kind: tokens[0].kind(),
+        });
     }
 
     /// Parses the rest of the statement when the first token was the
@@ -295,7 +313,7 @@ impl Parser {
     ///     [ <having clause> ]
     /// ```
     fn parse_statement_select_table_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableExpression, StatementParseError<'input>> {
-        let table_exprssion = TableExpression {
+        let table_expression = TableExpression {
             from_clause: self.parse_statement_select_table_expression_from_clause(input, tokens)?,
             group_by_clause: None,
             having_clause: None,
@@ -304,7 +322,12 @@ impl Parser {
 
         if !is_end_of_statement(tokens) {
             if tokens[0].kind() == TokenKind::Keyword(Keyword::Having) {
-                todo!("HAVING clause not yet supported");
+                return Err(StatementParseError::UnsupportedFeature {
+                    feature_name: "HAVING clause",
+                    feature_description: "Filtering based on the GROUP BY clause",
+                    found: tokens[0].as_string(input),
+                    token_kind: tokens[0].kind()
+                });
             }
 
             let mut toks = tokens.iter()
@@ -312,15 +335,25 @@ impl Parser {
 
             if toks.next() == Some(TokenKind::Keyword(Keyword::Group))
                  && toks.next() == Some(TokenKind::Keyword(Keyword::By)) {
-                todo!("GROUP BY clause not yet supported");
+                return Err(StatementParseError::UnsupportedFeature {
+                    feature_name: "GROUP BY clause",
+                    feature_description: "Grouping the SELECT statement columns",
+                    found: tokens[0].as_string(input),
+                    token_kind: tokens[0].kind(),
+                });
             }
 
             if tokens[0].kind() == TokenKind::Keyword(Keyword::Where) {
-                todo!("WHERE clause not yet supported");
+                return Err(StatementParseError::UnsupportedFeature {
+                    feature_name: "WHERE clause",
+                    feature_description: "Filtering the SELECT statement columns",
+                    found: tokens[0].as_string(input),
+                    token_kind: tokens[0].kind(),
+                });
             }
         }
 
-        Ok(table_exprssion)
+        Ok(table_expression)
     }
 
     /// Parses a `<from clause>`
@@ -402,7 +435,16 @@ impl Parser {
                 }
             }
 
-            todo!("Failed to parse column: {error:?}");
+            if let Some(error) = error {
+                return Err(error);
+            }
+
+            return Err(StatementParseError::UnsupportedFeature {
+                feature_name: "value expression",
+                feature_description: "Diverse and/or complex value expressions",
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            });
         }
     }
 
@@ -466,7 +508,7 @@ impl Parser {
         Ok((tokens, TableElement::ColumnDefinition(column_definition)))
     }
 
-    /// Parses the list of table elements, before an opening paranthesis `(` was
+    /// Parses the list of table elements, before an opening parenthesis `(` was
     /// consumed. This consumes the list of tokens up until and including the
     /// closing parenthesis `)`.
     fn parse_table_elements<'input>(&self, input: &'input str, tokens: &mut &[Token], definition: &mut TableDefinition) -> Result<(), StatementParseError<'input>> {
@@ -795,6 +837,15 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
+    #[error("unsupported feature: {feature_name}, found at: {token_kind} (`{found}`)")]
+    #[strum(props(Help="You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md"))]
+    UnsupportedFeature {
+        feature_name: &'static str,
+        feature_description: &'static str,
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
     #[error("unexpected end-of-file: expected a column name, value or expression")]
     ValueExpressionUnexpectedEndOfFile,
 
@@ -845,6 +896,7 @@ impl<'input> StatementParseError<'input> {
             StatementParseError::TableReferenceUnexpectedEndOfFile => None,
             StatementParseError::TableReferenceUnexpectedKeyword { found, .. } => Some(found),
             StatementParseError::TableReferenceUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::UnsupportedFeature { found, .. } => Some(found),
             StatementParseError::ValueExpressionUnexpectedEndOfFile => None,
             StatementParseError::ValueExpressionUnexpectedToken { found, .. } => Some(found),
         }
