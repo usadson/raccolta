@@ -1,7 +1,10 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use super::NumericValueExpression;
+use super::{
+    ColumnReference,
+    NumericValueExpression
+};
 
 /// ```text
 /// <value expression> ::=
@@ -19,4 +22,6 @@ use super::NumericValueExpression;
 pub enum ValueExpression {
     /// `<numeric value expression>`
     Numeric(NumericValueExpression),
+
+    ColumnReference(ColumnReference),
 }

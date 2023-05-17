@@ -70,6 +70,7 @@ fn is_column_value_trivially_convertible_to(column_value: &ContextuallyTypedRowV
                     _ => false,
                 }
             }
+            _ => todo!()
         }
     }
 }

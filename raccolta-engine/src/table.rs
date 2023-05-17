@@ -29,6 +29,7 @@ impl EngineColumn {
                         }
                     }
                 }
+                _ => todo!()
             }
         }
     }

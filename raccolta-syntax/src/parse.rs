@@ -36,7 +36,7 @@ use crate::{
             TableReference,
         },
         table_value_constructor::ContextuallyTypedTableValueConstructor,
-        ValueExpression,
+        ValueExpression, ColumnReference,
     },
     Keyword,
     Lexer,
@@ -864,6 +864,24 @@ impl Parser {
         *tokens = &tokens[1..];
 
         match first_token.kind() {
+            // ```text
+            // <identifier chain> ::=
+            //     <identifier> [ { <period> <identifier> }... ]
+            //
+            // <basic identifier chain> ::=
+            //     <identifier chain>
+            // ```
+            TokenKind::Identifier => {
+                let mut identifier_chain = vec![first_token.as_string(input).to_owned()];
+                while tokens.len() >= 2 && tokens[0].kind() == TokenKind::FullStop {
+                    if tokens[1].kind() == TokenKind::Identifier {
+                        identifier_chain.push(tokens[1].as_string(input).to_owned());
+                    }
+                    *tokens = &tokens[2..];
+                }
+                Ok(ValueExpression::ColumnReference(ColumnReference::BasicIdentifierChain(identifier_chain)))
+            }
+
             TokenKind::UnsignedInteger(integer) => Ok(
                 ValueExpression::Numeric(
                     NumericValueExpression::SimpleU64(integer)
