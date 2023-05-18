@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 raccolta-syntax = { path = "../raccolta-syntax" }
 
+itertools = "*"
 strum = { version = "*", features = [ "derive" ] }
 unicase = "*"
 
