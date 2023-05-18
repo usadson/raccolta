@@ -1,7 +1,10 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    RwLock,
+};
 
 use raccolta_syntax::expression::{
     data_type::DataType,
@@ -10,7 +13,7 @@ use raccolta_syntax::expression::{
     ValueExpression,
 };
 
-use crate::EngineResult;
+use crate::{EngineResult, EngineRow, EngineRowColumnValue};
 
 #[derive(Debug)]
 pub struct EngineColumn {
@@ -62,4 +65,47 @@ pub struct EngineColumnDescriptor {
 pub struct EngineTable {
     pub name: Arc<str>,
     pub columns: Vec<EngineColumn>,
+}
+
+impl EngineTable {
+    pub fn iter(instance: Arc<RwLock<Self>>) -> EngineTableColumnIterator {
+        EngineTableColumnIterator {
+            instance,
+            idx: 0,
+        }
+    }
+}
+
+pub struct EngineTableColumnIterator {
+    instance: Arc<RwLock<EngineTable>>,
+    idx: usize,
+}
+
+impl Iterator for EngineTableColumnIterator {
+    type Item = EngineRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let table = self.instance.read().unwrap();
+        if table.columns.is_empty() {
+            return None;
+        }
+
+        let idx = self.idx;
+        if table.columns[0].values.len() <= idx {
+            return None;
+        }
+
+        self.idx += 1;
+
+        Some(EngineRow {
+            values: table.columns
+                .iter()
+                .map(|column| {
+                    match &column.values {
+                        EngineColumnContainer::Integers(vec) => EngineRowColumnValue::I32(vec[idx]),
+                    }
+                })
+                .collect()
+        })
+    }
 }

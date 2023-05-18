@@ -15,12 +15,7 @@ use raccolta_syntax::expression::{
 
 use crate::{
     EngineResult,
-    EngineRow,
-    EngineRowColumnValue,
-    table::{
-        EngineColumnContainer,
-        EngineTable,
-    },
+    table::EngineTable,
 };
 
 /// Execute a `SELECT` statement.
@@ -39,19 +34,20 @@ fn execute_select_sublist(table: Arc<RwLock<EngineTable>>, sublist: &[SelectSubl
 
 fn execute_select_return_all(table_ptr: Arc<RwLock<EngineTable>>) -> EngineResult {
     let table = table_ptr.as_ref().read().unwrap();
-    assert_eq!(table.columns.len(), 1);
+
+    let column_names = table.columns.iter()
+        .map(|column| column.descriptor.name.clone())
+        .collect();
+
+    let row_count = table.columns[0].values.len();
+
+    // Ha ha, this isn't what it seams like :^)
+    drop(table);
 
     EngineResult {
         messages: Vec::new(),
-        column_names: table.columns.iter()
-            .map(|column| column.descriptor.name.clone())
-            .collect(),
-        row_count: table.columns[0].values.len(),
-        row_iterator: Box::new(match &table.columns[0].values {
-            EngineColumnContainer::Integers(vec) => vec.clone()
-                .into_iter()
-                .map(|value| EngineRowColumnValue::I32(value))
-                .map(|value| EngineRow { values: vec![value] })
-        })
+        column_names,
+        row_count,
+        row_iterator: Box::new(EngineTable::iter(table_ptr))
     }
 }
