@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+use crate::set_function::SetFunctionSpecification;
+
 use super::{
     ColumnReference,
     NumericValueExpression
@@ -24,4 +26,6 @@ pub enum ValueExpression {
     Numeric(NumericValueExpression),
 
     ColumnReference(ColumnReference),
+
+    SetFunctionSpecification(SetFunctionSpecification),
 }

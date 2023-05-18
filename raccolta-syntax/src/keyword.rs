@@ -130,6 +130,7 @@ pub enum Keyword {
     Contributors,
     Convert,
     Corresponding,
+    Count,
     Cpu,
     Create,
     Cross,

@@ -1,6 +1,31 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+/// ```text
+/// <set function specification> ::=
+///       COUNT <left paren> <asterisk> <right paren>
+///     | <general set function>
+///     | <grouping operation>
+///
+/// <general set function> ::=
+///     <set function type>
+///     <left paren> [ <set quantifier> ] <value expression> <right paren>
+///
+/// <set function type> ::= <computational operation>
+///
+/// <computational operation> ::=
+///       AVG | MAX | MIN | SUM
+///     | EVERY | ANY | SOME
+///     | COUNT
+///
+/// <grouping operation> ::=
+///     GROUPING <left paren> <column reference> <right paren>
+/// ```
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SetFunctionSpecification {
+    /// `COUNT(*)` i.e. `COUNT <left paren> <asterisk> <right paren>`
+    Count,
+}
 
 /// The `<set quantifier>` specifies a quantification method of e.g. an
 /// `SELECT`-query. This can be either **`DISTINCT`** or **`ALL`**.

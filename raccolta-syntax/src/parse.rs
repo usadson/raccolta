@@ -45,7 +45,7 @@ use crate::{
         TableDefinition,
         TableElement,
     },
-    set_function::SetQuantifier,
+    set_function::{SetQuantifier, SetFunctionSpecification},
     statement::{
         insert_statement::{
             InsertColumnsAndSource,
@@ -680,6 +680,57 @@ impl Parser {
         }
     }
 
+    /// Parses the `<set function specification>` when the **`COUNT`** keyword
+    /// was consumed.
+    fn parse_set_function_specification_count<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<SetFunctionSpecification, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedLeftParen {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::LeftParenthesis {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedLeftParen {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedAsterisk {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::Asterisk {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedAsterisk {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedRightParen {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::RightParenthesis {
+            return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind()
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        Ok(SetFunctionSpecification::Count)
+    }
+
     /// Parses a single table element, but does not consume a comma `,` or
     /// closing parenthesis `)`.
     fn parse_table_element<'input, 'tokens>(&self, input: &'input str, mut tokens: &'tokens [Token])
@@ -881,6 +932,12 @@ impl Parser {
                 }
                 Ok(ValueExpression::ColumnReference(ColumnReference::BasicIdentifierChain(identifier_chain)))
             }
+
+            TokenKind::Keyword(Keyword::Count) => Ok(
+                ValueExpression::SetFunctionSpecification(
+                    self.parse_set_function_specification_count(input, tokens)?
+                )
+            ),
 
             TokenKind::UnsignedInteger(integer) => Ok(
                 ValueExpression::Numeric(
@@ -1084,6 +1141,45 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
+    #[error("unexpected token: {token_kind} (`{found}`), expected `*` after `COUNT(`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedTokenExpectedAsterisk {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `(` after `COUNT`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedTokenExpectedLeftParen {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `)` after `COUNT(*`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected end-of-file, expected `*` after `COUNT(`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedEofExpectedAsterisk {
+        found: &'input str,
+    },
+
+    #[error("unexpected end-of-file, expected `(` after `COUNT`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedEofExpectedLeftParen {
+        found: &'input str,
+    },
+
+    #[error("unexpected end-of-file, expected `)` after `COUNT(*`")]
+    #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
+    SetFunctionSpecificationCountUnexpectedEofExpectedRightParen {
+        found: &'input str,
+    },
+
     #[error("statement doesn't start with a keyword, but a {token_kind:?}: `{found}`")]
     StartNotAToken {
         found: &'input str,
@@ -1243,6 +1339,12 @@ impl<'input> StatementParseError<'input> {
             StatementParseError::InsertIntoStatementUnexpectedToken { found, .. } => Some(found),
             StatementParseError::InsertIntoStatementUnexpectedTrailingToken { found, ..} => Some(found),
             StatementParseError::SelectStatementUnexpectedToken { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedAsterisk { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedLeftParen { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedRightParen { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedAsterisk { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedLeftParen { found, .. } => Some(found),
+            StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen { found, .. } => Some(found),
             StatementParseError::StartNotAToken { found, .. } => Some(found),
             StatementParseError::StartUnknownKeyword { found, .. } => Some(found),
             StatementParseError::TableElementSingleExpectedKeywordAsDataType { found, .. } => Some(found),
