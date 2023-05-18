@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+use std::sync::Arc;
+
 use raccolta_syntax::expression::{
     data_type::DataType,
     NumericValueExpression,
@@ -8,7 +10,7 @@ use raccolta_syntax::expression::{
     ValueExpression,
 };
 
-use crate::{EngineResult, EngineRowColumnValue};
+use crate::EngineResult;
 
 #[derive(Debug)]
 pub struct EngineColumn {
@@ -58,6 +60,6 @@ pub struct EngineColumnDescriptor {
 /// A table as represented in the engine.
 #[derive(Debug)]
 pub struct EngineTable {
-    pub name: String,
+    pub name: Arc<str>,
     pub columns: Vec<EngineColumn>,
 }

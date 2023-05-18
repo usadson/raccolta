@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+use std::sync::{RwLock, Arc};
+
 use raccolta_syntax::expression::{
     data_type::{
         DataType,
@@ -21,7 +23,7 @@ use crate::{table::EngineTable, EngineResult, EngineMessage};
 /// Executes the `INSERT INTO` statement, after the table was found to
 /// insert into.
 pub fn execute_from_contextually_typed_table_value_constructor(
-    table: &mut EngineTable, constructor: ContextuallyTypedTableValueConstructor
+    table: Arc<RwLock<EngineTable>>, constructor: ContextuallyTypedTableValueConstructor
 ) -> EngineResult {
     match execute_from_contextually_typed_table_value_constructor_impl(table, constructor) {
         Ok(result) => result,
@@ -30,8 +32,9 @@ pub fn execute_from_contextually_typed_table_value_constructor(
 }
 
 fn execute_from_contextually_typed_table_value_constructor_impl(
-    table: &mut EngineTable, constructor: ContextuallyTypedTableValueConstructor
+    table: Arc<RwLock<EngineTable>>, constructor: ContextuallyTypedTableValueConstructor
 ) -> Result<EngineResult, EngineResult> {
+    let table = &mut table.as_ref().write().expect("TODO: Failed to write() to table");
     validate_table_with_constructor(table, &constructor)?;
 
     let row_count = constructor.values.len();

@@ -7,11 +7,18 @@ mod table;
 
 use std::{
     borrow::Cow,
+    collections::HashMap,
     fmt::{
         Debug,
         Display,
     },
+    sync::{
+        Arc,
+        RwLock,
+    },
 };
+
+use unicase::UniCase;
 
 use raccolta_syntax::{
     expression::{
@@ -56,14 +63,14 @@ use table::{
 /// the parsed statements by `raccolta-syntax`.
 #[derive(Debug)]
 pub struct Engine {
-    tables: Vec<EngineTable>,
+    tables: HashMap<UniCase<Arc<str>>, Arc<RwLock<EngineTable>>>,
 }
 
 impl Engine {
     /// Creates a new instance of the engine.
     pub fn new() -> Self {
         Self {
-            tables: Vec::new(),
+            tables: HashMap::new(),
         }
     }
 
@@ -109,8 +116,8 @@ impl Engine {
             ]);
         }
 
-        let table_ref = self.tables.iter_mut()
-            .find(|table| table.name.eq_ignore_ascii_case(&statement.table_name.table_qualifier));
+        let table_name = UniCase::new(Arc::from(statement.table_name.table_qualifier.as_ref()));
+        let table_ref = self.tables.get(&table_name);
 
         let Some(table_ref) = table_ref else {
             return EngineResult::with_messages(vec![
@@ -120,7 +127,7 @@ impl Engine {
 
         match statement.insert_columns_and_source {
             InsertColumnsAndSource::FromConstructor { constructor, .. } => {
-                insert::execute_from_contextually_typed_table_value_constructor(table_ref, constructor)
+                insert::execute_from_contextually_typed_table_value_constructor(table_ref.clone(), constructor)
             }
         }
     }
@@ -142,13 +149,11 @@ impl Engine {
     /// Executes the [`TableDefinition`] statement, which is colloquially known
     /// as the `CREATE TABLE` statement.
     fn execute_statement_schema_definition_table(&mut self, statement: TableDefinition) -> EngineResult {
-        for table in &self.tables {
-            if table.name.eq_ignore_ascii_case(&statement.table_name) {
-                return EngineResult::with_messages(vec![
-                    EngineMessage::Error("A table with this name already exists".into()),
-                    EngineMessage::Hint("Table names are case-insensitive, try to come up with a different name! :)".into())
-                ]);
-            }
+        if self.tables.contains_key(&UniCase::new(Arc::from(statement.table_name.as_ref()))) {
+            return EngineResult::with_messages(vec![
+                EngineMessage::Error("A table with this name already exists".into()),
+                EngineMessage::Hint("Table names are case-insensitive, try to come up with a different name! :)".into())
+            ]);
         }
 
         let mut columns = Vec::with_capacity(statement.elements.len());
@@ -175,14 +180,19 @@ impl Engine {
             });
         }
 
-        self.tables.push(EngineTable {
-            name: statement.table_name,
+        let table_name = Arc::from(statement.table_name.as_ref());
+        let table = EngineTable {
+            name: Arc::clone(&table_name),
             columns
-        });
+        };
+
+        self.tables.insert(
+            UniCase::new(table_name),
+            Arc::new(RwLock::new(table))
+        );
 
         EngineResult::with_messages(vec![
-            EngineMessage::Informational("New table successfully created.".into()),
-            EngineMessage::Informational(format!("DEBUG: Internal Representation of table: {:#?}", self.tables.last().unwrap()).into())
+            EngineMessage::Informational("New table successfully created.".into())
         ])
     }
 
@@ -214,16 +224,13 @@ impl Engine {
             }
         };
 
-        let table_ref = self.tables.iter()
-            .find(|table| table.name.eq_ignore_ascii_case(table_name));
-
-        let Some(table_ref) = table_ref else {
+        let Some(table_ref) = self.tables.get(&UniCase::new(Arc::from(table_name.clone()))) else {
             return EngineResult::with_messages(vec![
                 EngineMessage::Error(format!("Unknown table named \"{}\"", table_name).into())
             ]);
         };
 
-        select::execute(query_specification, table_ref)
+        select::execute(query_specification, table_ref.clone())
     }
 
     /// Returns a message describing that this statement is not yet supported
