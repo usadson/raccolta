@@ -3,7 +3,7 @@
 
 use std::sync::{
     Arc,
-    RwLock,
+    RwLock, RwLockReadGuard,
 };
 
 use raccolta_syntax::expression::{
@@ -72,6 +72,15 @@ impl EngineTable {
         EngineTableColumnIterator {
             instance,
             idx: 0,
+            selected_column_indices: None
+        }
+    }
+
+    pub fn iter_with(instance: Arc<RwLock<Self>>, selected_column_indices: Vec<usize>) -> EngineTableColumnIterator {
+        EngineTableColumnIterator {
+            instance,
+            idx: 0,
+            selected_column_indices: Some(selected_column_indices)
         }
     }
 }
@@ -79,6 +88,29 @@ impl EngineTable {
 pub struct EngineTableColumnIterator {
     instance: Arc<RwLock<EngineTable>>,
     idx: usize,
+    selected_column_indices: Option<Vec<usize>>,
+}
+
+impl EngineTableColumnIterator {
+    fn next_with_indices<'lock>(
+        &self,
+        table: RwLockReadGuard<'lock, EngineTable>,
+        selected_column_indices: &[usize],
+        row_index: usize,
+    ) -> EngineRow {
+        EngineRow {
+            values: selected_column_indices.into_iter()
+                .map(|column_index| {
+                    let column = &table.columns[*column_index];
+
+                    match &column.values {
+                        EngineColumnContainer::Integers(vec) =>
+                            EngineRowColumnValue::I32(vec[row_index]),
+                    }
+                })
+                .collect()
+        }
+    }
 }
 
 impl Iterator for EngineTableColumnIterator {
@@ -96,6 +128,10 @@ impl Iterator for EngineTableColumnIterator {
         }
 
         self.idx += 1;
+
+        if let Some(selected_column_indices) = &self.selected_column_indices {
+            return Some(self.next_with_indices(table, selected_column_indices, idx));
+        }
 
         Some(EngineRow {
             values: table.columns

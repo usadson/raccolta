@@ -7,6 +7,7 @@
 ///     | MODULE <period> <qualified identifier> <period> <column name>
 /// ```
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum ColumnReference {
     /// ```text
     /// <identifier chain> ::=
