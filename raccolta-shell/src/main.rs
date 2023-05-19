@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use std::{io::Write, ops::Range};
+use std::ops::Range;
 
 use raccolta_engine::EngineMessage;
 use strum::EnumProperty;
@@ -42,14 +42,23 @@ fn main() {
     let parser = raccolta_syntax::Parser::new();
 
     loop {
-        print!("> ");
-        std::io::stdout().flush().unwrap();
+        let line = inquire::Text::new(">")
+            .prompt();
 
-        let line = std::io::stdin()
-            .lines().next().unwrap()
-            .unwrap();
+        let line = match line {
+            Ok(line) => line,
+            Err(e) => {
+                match e {
+                    inquire::InquireError::OperationCanceled => continue,
+                    inquire::InquireError::OperationInterrupted => return,
+                    _ => panic!("Failed: {e:?}"),
+                }
+            }
+        };
 
-        match parser.parse_statement(&line) {
+        let (result, _) = parser.parse_statement_extended(&line);
+
+        match result {
             Ok(res) => {
                 println!("{res:#?}");
                 let result = engine.execute_statement(res);
