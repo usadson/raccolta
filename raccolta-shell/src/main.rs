@@ -1,10 +1,14 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+mod auto_complete;
+
 use std::ops::Range;
 
 use raccolta_engine::EngineMessage;
 use strum::EnumProperty;
+
+use auto_complete::AutoCompleter;
 
 /// Let's say
 /// haystack = "hello"
@@ -43,6 +47,7 @@ fn main() {
 
     loop {
         let line = inquire::Text::new(">")
+            .with_autocomplete(AutoCompleter::new())
             .prompt();
 
         let line = match line {
