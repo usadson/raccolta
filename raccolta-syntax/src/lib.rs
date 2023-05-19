@@ -11,7 +11,6 @@ pub mod set_function;
 pub mod statement;
 pub mod token;
 
-pub use keyword::Keyword;
 use keyword::{ReservedWord, NonReservedWord};
 pub use token::{Token, TokenKind};
 
