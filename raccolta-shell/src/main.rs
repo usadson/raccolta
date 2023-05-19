@@ -2,10 +2,12 @@
 // All Rights Reserved.
 
 mod auto_complete;
+mod syntax_highlighted;
 
 use std::ops::Range;
 
 use raccolta_engine::EngineMessage;
+use raccolta_syntax::TokenKind;
 use strum::EnumProperty;
 
 use auto_complete::AutoCompleter;
@@ -61,7 +63,7 @@ fn main() {
             }
         };
 
-        let (result, _) = parser.parse_statement_extended(&line);
+        let (result, tokens) = parser.parse_statement_extended(&line);
 
         match result {
             Ok(res) => {
@@ -98,7 +100,8 @@ fn main() {
                 if let Some(found) = e.found() {
                     if let Some(range) = get_range_of_string_slice(&line, found) {
                         println!("Error occurred here: ");
-                        println!("  {line}");
+                        print!("  ");
+                        syntax_highlighted::print_syntax_highlighted(&line, &tokens);
                         println!("  {}{}", " ".repeat(range.start), "^".repeat(range.end - range.start));
                     }
                 }

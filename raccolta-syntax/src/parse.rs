@@ -220,7 +220,9 @@ impl Parser {
         }
 
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::CorrelationNameUnexpectedEndOfFile);
+            return Err(StatementParseError::CorrelationNameUnexpectedEndOfFile {
+                found: input.slice_empty_end()
+            });
         }
 
         if let Some(identifier) = tokens.consume_identifier_owned(input) {
@@ -380,7 +382,9 @@ impl Parser {
         };
 
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::CreateTableUnexpectedEofAfterTableName);
+            return Err(StatementParseError::CreateTableUnexpectedEofAfterTableName {
+                found: input.slice_empty_end()
+            });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
@@ -603,7 +607,9 @@ impl Parser {
     /// Parses a `<from clause>`
     fn parse_statement_select_table_expression_from_clause<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<FromClause, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::FromClauseUnexpectedEof);
+            return Err(StatementParseError::FromClauseUnexpectedEof {
+                found: input.slice_empty_end()
+            });
         }
 
         if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::From) {
@@ -748,7 +754,9 @@ impl Parser {
     fn parse_table_element<'input, 'tokens>(&self, input: &'input str, mut tokens: &'tokens [Token])
             -> Result<(&'tokens [Token], TableElement), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAtBeginning);
+            return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAtBeginning {
+                found: input.slice_empty_end()
+            });
         }
 
         // If the first token is a keyword, the user might've forgotten to
@@ -771,7 +779,9 @@ impl Parser {
         tokens = &tokens[1..];
 
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAfterColumnName);
+            return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAfterColumnName {
+                found: input.slice_empty_end()
+            });
         }
 
         let data_type_reserved_word_token = tokens[0];
@@ -808,7 +818,9 @@ impl Parser {
     /// closing parenthesis `)`.
     fn parse_table_elements<'input>(&self, input: &'input str, tokens: &mut &[Token], definition: &mut TableDefinition) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::TableElementsUnexpectedEndOfFileAtBeginning);
+            return Err(StatementParseError::TableElementsUnexpectedEndOfFileAtBeginning {
+                found: input.slice_empty_end()
+            });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
@@ -822,7 +834,9 @@ impl Parser {
 
         loop {
             if is_end_of_statement(tokens) {
-                return Err(StatementParseError::TableElementsUnexpectedEndOfFile);
+                return Err(StatementParseError::TableElementsUnexpectedEndOfFile {
+                    found: input.slice_empty_end()
+                });
             }
 
             if tokens[0].kind() == TokenKind::RightParenthesis {
@@ -874,7 +888,9 @@ impl Parser {
     /// ```
     fn parse_table_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableReference, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::TableReferenceUnexpectedEndOfFile);
+            return Err(StatementParseError::TableReferenceUnexpectedEndOfFile {
+                found: input.slice_empty_end(),
+            });
         }
 
         let first_token = tokens[0];
@@ -920,7 +936,9 @@ impl Parser {
     /// ```
     fn parse_value_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ValueExpression, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::ValueExpressionUnexpectedEndOfFile);
+            return Err(StatementParseError::ValueExpressionUnexpectedEndOfFile {
+                found: input.slice_empty_end()
+            });
         }
 
         let first_token = tokens[0];
@@ -1005,7 +1023,9 @@ pub enum StatementParseError<'input> {
     },
 
     #[error("unexpected end-of-file: expected identifier as the correlation name (alias)")]
-    CorrelationNameUnexpectedEndOfFile,
+    CorrelationNameUnexpectedEndOfFile {
+        found: &'input str,
+    },
 
     #[error("unexpected keyword: `{reserved_word}` (`{found}`): expected an identifier as the name of the correlation name (alias)")]
     #[strum(props(Hint="Did you forget to escape the identifier?"))]
@@ -1046,7 +1066,9 @@ pub enum StatementParseError<'input> {
     },
 
     #[error("unexpected end-of-file: expected '(' after table name of `CREATE TABLE`")]
-    CreateTableUnexpectedEofAfterTableName,
+    CreateTableUnexpectedEofAfterTableName  {
+        found: &'input str,
+    },
 
     #[error("unexpected end-of-file: expected <table element> after '(' of `CREATE TABLE`, got: {found} (`{token_kind}`)")]
     CreateTableUnexpectedEofAfterTableNameAndLeftParen {
@@ -1073,7 +1095,9 @@ pub enum StatementParseError<'input> {
     EofSelectList(&'input str),
 
     #[error("unexpected end-of-file, expected FROM clause")]
-    FromClauseUnexpectedEof,
+    FromClauseUnexpectedEof  {
+        found: &'input str,
+    },
 
     #[error("unexpected token {token_kind}: `{found}`, expected FROM clause")]
     FromClauseUnexpectedToken {
@@ -1228,10 +1252,14 @@ pub enum StatementParseError<'input> {
 
     #[error("unexpected end-of-file after the column name")]
     #[strum(props(Help="Follow the column name with the column type, e.g. `INT`, `NVARCHAR`, etc."))]
-    TableElementSingleUnexpectedEndOfFileAfterColumnName,
+    TableElementSingleUnexpectedEndOfFileAfterColumnName {
+        found: &'input str,
+    },
 
     #[error("unexpected end-of-file at the beginning of <table element>")]
-    TableElementSingleUnexpectedEndOfFileAtBeginning,
+    TableElementSingleUnexpectedEndOfFileAtBeginning {
+        found: &'input str,
+    },
 
     #[error("unknown keyword {reserved_word} (`{found}`), expected data type for column definition")]
     TableElementSingleUnknownDataTypeKeyword {
@@ -1261,7 +1289,9 @@ pub enum StatementParseError<'input> {
 
     #[error("unexpected end-of-file in the table column definitions")]
     #[strum(props(Hint="Did you forget to close the column list by inserting a closing parenthesis `)`?"))]
-    TableElementsUnexpectedEndOfFile,
+    TableElementsUnexpectedEndOfFile {
+        found: &'input str,
+    },
 
     #[error("unexpected end-of-file after the comma that is separating column definitions: `{found}`")]
     TableElementsUnexpectedEndOfFileAfterComma {
@@ -1271,7 +1301,9 @@ pub enum StatementParseError<'input> {
     #[error("unexpected end-of-file before table column definition list")]
     #[strum(props(Hint="Did you forget to add the column definitions?"))]
     #[strum(props(Help="Supply the column definitions by opening with a parenthesis `(`, followed by one or more columns (e.g. `id INT`) and closing with a parenthesis `)`. For example: `CREATE TABLE my_favorite_numbers (value INT);"))]
-    TableElementsUnexpectedEndOfFileAtBeginning,
+    TableElementsUnexpectedEndOfFileAtBeginning {
+        found: &'input str,
+    },
 
     #[error("unexpected semicolon `{found}` in the table column definitions")]
     #[strum(props(Hint="Did you forget to close the column list by inserting a closing parenthesis `)`?"))]
@@ -1281,7 +1313,9 @@ pub enum StatementParseError<'input> {
 
     #[error("unexpected end-of-file, expected a table reference")]
     #[strum(props(Hint="Did you forget to add a table name?"))]
-    TableReferenceUnexpectedEndOfFile,
+    TableReferenceUnexpectedEndOfFile {
+        found: &'input str,
+    },
 
     #[error("unexpected keyword: {reserved_word} (`{found}`), expected a table reference")]
     #[strum(props(Hint="Did you forget to escape the table or schema name?"))]
@@ -1307,7 +1341,9 @@ pub enum StatementParseError<'input> {
     },
 
     #[error("unexpected end-of-file: expected a column name, value or expression")]
-    ValueExpressionUnexpectedEndOfFile,
+    ValueExpressionUnexpectedEndOfFile {
+        found: &'input str,
+    },
 
     #[error("unexpected token: {token_kind} (`{found}`), expected a column name, value or expression")]
     ValueExpressionUnexpectedToken {

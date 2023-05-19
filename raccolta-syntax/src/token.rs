@@ -8,8 +8,8 @@ use crate::keyword::{
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Token {
-    first_character_byte_idx: usize,
-    last_character_byte_idx: usize,
+    pub first_character_byte_idx: usize,
+    pub last_character_byte_idx: usize,
     kind: TokenKind,
 }
 
