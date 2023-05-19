@@ -844,7 +844,7 @@ pub enum NonReservedWord {
     Always,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Asc,
 
     /// TODO check this according to SQL 2016
@@ -878,11 +878,6 @@ pub enum NonReservedWord {
     /// **Specification:** SQL 2003
     Attributes,
 
-    /// TODO check this according to SQL 2016
-    /// # About
-    /// **Specification:** SQL 1999
-    Avg,
-
 
     /// # About
     /// **Specification:** SQL 2003
@@ -891,10 +886,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2003
     Bernoulli,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Between,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -982,7 +973,7 @@ pub enum NonReservedWord {
     Coalesce,
 
     /// # About
-    /// **Specification:** SQL 1992
+    /// **Specification:** SQL 1986
     Cobol,
 
     /// # About
@@ -1062,16 +1053,12 @@ pub enum NonReservedWord {
     Contains,
 
     /// # About
-    /// **Specification:** SQL 2016
+    /// **Specification:** SQL 1986
     Continue,
 
     /// # About
     /// **Specification:** SQL 1999
     Convert,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Count,
 
     /// # About
     /// **Specification:** SQL 1992
@@ -1123,7 +1110,7 @@ pub enum NonReservedWord {
     Derived,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Desc,
 
     /// # About
@@ -1205,10 +1192,6 @@ pub enum NonReservedWord {
 
     /// # About
     /// **Specification:** SQL 1999
-    Exists,
-
-    /// # About
-    /// **Specification:** SQL 1999
     Extract,
 
 
@@ -1261,12 +1244,8 @@ pub enum NonReservedWord {
     Format,
 
     /// # About
-    /// **Specification:** SQL 1992
+    /// **Specification:** SQL 1986
     Fortran,
-
-    /// # About
-    /// **Specification:** SQL 2003
-    Found,
 
     /// # About
     /// **Specification:** SQL 2016
@@ -1310,11 +1289,11 @@ pub enum NonReservedWord {
     Generated,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Go,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Goto,
 
     /// # About
@@ -1468,10 +1447,6 @@ pub enum NonReservedWord {
     Matched,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Max,
-
-    /// # About
     /// **Specification:** SQL 2016
     Maxvalue,
 
@@ -1490,10 +1465,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Method,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Min,
 
     /// # About
     /// **Specification:** SQL 2003
@@ -1550,7 +1521,7 @@ pub enum NonReservedWord {
     OctetLength,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Option,
 
     /// # About
@@ -1627,7 +1598,7 @@ pub enum NonReservedWord {
     Partial,
 
     /// # About
-    /// **Specification:** SQL 1992
+    /// **Specification:** SQL 1986
     Pascal,
 
     /// # About
@@ -1655,7 +1626,7 @@ pub enum NonReservedWord {
     Plan,
 
     /// # About
-    /// **Specification:** SQL 1992
+    /// **Specification:** SQL 1986
     Pli,
 
     /// # About
@@ -1687,7 +1658,7 @@ pub enum NonReservedWord {
     PrivateParamsS,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Privileges,
 
     /// # About
@@ -1695,7 +1666,7 @@ pub enum NonReservedWord {
     Prune,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Public,
 
 
@@ -1790,7 +1761,7 @@ pub enum NonReservedWord {
     Scale,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Schema,
 
     /// # About
@@ -1810,7 +1781,7 @@ pub enum NonReservedWord {
     ScopeSchema,
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Section,
 
     /// # About
@@ -1926,10 +1897,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Substring,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Sum,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2075,12 +2042,12 @@ pub enum NonReservedWord {
 
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     View,
 
 
     /// # About
-    /// **Specification:** SQL 2003
+    /// **Specification:** SQL 1986
     Work,
 
     /// # About
@@ -2129,10 +2096,6 @@ pub enum ReservedWord {
 
     /// # About
     /// **Specification:** SQL 1986
-    Asc,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Authorization,
 
     /// # About
@@ -2171,15 +2134,7 @@ pub enum ReservedWord {
 
     /// # About
     /// **Specification:** SQL 1986
-    Cobol,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Commit,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Continue,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2213,10 +2168,6 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Delete,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Desc,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2258,23 +2209,11 @@ pub enum ReservedWord {
 
     /// # About
     /// **Specification:** SQL 1986
-    Fortran,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Found,
 
     /// # About
     /// **Specification:** SQL 1986
     From,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Go,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Goto,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2368,10 +2307,6 @@ pub enum ReservedWord {
 
     /// # About
     /// **Specification:** SQL 1986
-    Option,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Or,
 
     /// # About
@@ -2381,27 +2316,11 @@ pub enum ReservedWord {
 
     /// # About
     /// **Specification:** SQL 1986
-    Pascal,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Pli,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Precision,
 
     /// # About
     /// **Specification:** SQL 1986
-    Privileges,
-
-    /// # About
-    /// **Specification:** SQL 1986
     Procedure,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Public,
 
 
     /// # About
@@ -2412,14 +2331,6 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Rollback,
 
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Schema,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Section,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2484,10 +2395,6 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Values,
 
-    /// # About
-    /// **Specification:** SQL 1986
-    View,
-
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2500,10 +2407,6 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     With,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Work,
 }
 
 #[cfg(test)]
