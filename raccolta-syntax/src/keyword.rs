@@ -2505,3 +2505,34 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Work,
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use strum::IntoEnumIterator;
+
+    use super::*;
+
+    /// Checks for overlap between non-reserved words and reserved words. This
+    /// is disallowed since the lexer will parse them incorrectly, and the
+    /// parser depends on the output of the lexer.
+    #[test]
+    fn no_overlap_between_non_reserved_words_and_reserved_words() {
+        let reserved: HashSet<String> = ReservedWord::iter()
+            .map(|word| word.to_string())
+            .collect();
+
+        let non_reserved: HashSet<String> = NonReservedWord::iter()
+            .map(|word| word.to_string())
+            .collect();
+
+        let mut overlap: Vec<&str> = non_reserved.intersection(&reserved).map(|str| str.as_ref()).collect();
+        overlap.sort();
+
+        if !overlap.is_empty() {
+            panic!("There is overlap in reserved and non-reserved words for {} word(s): {}",
+                overlap.len(), overlap.join(", "));
+        }
+    }
+}
