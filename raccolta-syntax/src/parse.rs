@@ -663,11 +663,15 @@ impl Parser {
                 return Ok(SelectList::Sublist(sublist));
             }
 
-            if !sublist.is_empty() && tokens[0].kind() != TokenKind::Comma {
-                return Ok(SelectList::Sublist(sublist));
-            }
-
             let tokens_saved = *tokens;
+
+            if !sublist.is_empty() {
+                if tokens[0].kind() != TokenKind::Comma {
+                    return Ok(SelectList::Sublist(sublist));
+                }
+
+                tokens.next();
+            }
 
             let mut error = None;
 
@@ -1402,6 +1406,52 @@ mod tests {
                             QuerySpecification {
                                 set_quantifier: SetQuantifier::All,
                                 select_list: SelectList::Asterisk,
+                                table_expression: None,
+                            }
+                        )
+                    )
+                }
+            )
+        );
+
+        assert_eq!(parser.parse_statement(input), Ok(expected));
+    }
+
+    #[rstest]
+    #[case("SELECT id", &["id"])]
+    #[case("SELECT number", &["number"])]
+    #[case("SELECT id, number", &["id", "number"])]
+    #[case("SELECT abc, def", &["abc", "def"])]
+    #[case("SELECT def, abc, xyz", &["def", "abc", "xyz"])]
+    #[case("SELECT xyz, abc, def", &["xyz", "abc", "def"])]
+    fn parser_simple_select_statement_column_references(#[case] input: &str, #[case] columns: &[&str]) {
+        let parser = Parser::new();
+
+        let expected = SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::SelectStatement(
+                QueryExpression{
+                    body: QueryExpressionBody::SimpleTable(
+                        SimpleTable::QuerySpecification(
+                            QuerySpecification {
+                                set_quantifier: SetQuantifier::All,
+                                select_list: SelectList::Sublist(columns
+                                    .into_iter()
+                                    .map(|column| {
+                                        SelectSublist::DerivedColumn(
+                                            DerivedColumn {
+                                                value_expression: ValueExpression::ColumnReference(
+                                                    ColumnReference::BasicIdentifierChain(
+                                                        vec![
+                                                            column.to_string()
+                                                        ]
+                                                    )
+                                                ),
+                                                alias: None
+                                            }
+                                        )
+                                    })
+                                    .collect()
+                                ),
                                 table_expression: None,
                             }
                         )
