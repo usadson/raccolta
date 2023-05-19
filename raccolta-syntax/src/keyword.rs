@@ -1248,6 +1248,10 @@ pub enum NonReservedWord {
     Fortran,
 
     /// # About
+    /// **Specification:** SQL 1986
+    Found,
+
+    /// # About
     /// **Specification:** SQL 2016
     Fulfill,
 
@@ -1490,6 +1494,38 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2003
     Names,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nested,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nesting,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Next,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nfc,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nfd,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nfkc,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nfkd,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Normalized,
 
     /// # About
     /// **Specification:** SQL 1992
@@ -2206,10 +2242,6 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     For,
-
-    /// # About
-    /// **Specification:** SQL 1986
-    Found,
 
     /// # About
     /// **Specification:** SQL 1986
