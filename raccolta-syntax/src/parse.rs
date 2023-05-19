@@ -3,7 +3,10 @@
 
 mod extensions;
 
-use strum::{EnumProperty, AsRefStr};
+use strum::{
+    AsRefStr,
+    EnumProperty,
+};
 use thiserror::Error;
 
 use crate::{
@@ -38,7 +41,10 @@ use crate::{
         table_value_constructor::ContextuallyTypedTableValueConstructor,
         ValueExpression, ColumnReference,
     },
-    Keyword,
+    keyword::{
+        NonReservedWord,
+        ReservedWord,
+    },
     Lexer,
     schema::definition::table_definition::{
         ColumnDefinition,
@@ -209,7 +215,7 @@ impl Parser {
     /// Parse an optional `<correlation name>`. A correlation name is an alias
     /// to a specific column or table.
     fn parse_correlation_name_optional<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<Option<String>, StatementParseError<'input>> {
-        if !tokens.consume_keyword(Keyword::As) {
+        if !tokens.consume_reserved_word(ReservedWord::As) {
             return Ok(None);
         }
 
@@ -220,10 +226,10 @@ impl Parser {
         if let Some(identifier) = tokens.consume_identifier_owned(input) {
             Ok(Some(identifier))
         } else {
-            if let TokenKind::Keyword(keyword) = tokens[0].kind() {
-                return Err(StatementParseError::CorrelationNameUnexpectedKeyword {
+            if let TokenKind::ReservedWord(reserved_word) = tokens[0].kind() {
+                return Err(StatementParseError::CorrelationNameUnexpectedReservedWord {
                     found: tokens[0].as_string(input),
-                    keyword
+                    reserved_word
                 });
             }
 
@@ -243,7 +249,7 @@ impl Parser {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Values) => {
+            TokenKind::ReservedWord(ReservedWord::Values) => {
                 *tokens = &tokens[1..];
 
                 Ok(InsertColumnsAndSource::FromConstructor {
@@ -252,9 +258,9 @@ impl Parser {
                 })
             }
 
-            TokenKind::Keyword(keyword) => Err(StatementParseError::InsertColumnsAndSourceUnexpectedKeyword {
+            TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::InsertColumnsAndSourceUnexpectedKeyword {
                 found: tokens[0].as_string(input),
-                keyword,
+                reserved_word,
             }),
 
             _ => Err(StatementParseError::InsertColumnsAndSourceUnexpectedToken {
@@ -278,7 +284,7 @@ impl Parser {
             return (Err(StatementParseError::EmptyInput), all_tokens);
         };
 
-        let TokenKind::Keyword(keyword) = first_token.kind() else {
+        let TokenKind::ReservedWord(reserved_word) = first_token.kind() else {
             return (Err(StatementParseError::StartNotAToken {
                 found: first_token.as_string(input),
                 token_kind: first_token.kind()
@@ -287,14 +293,14 @@ impl Parser {
 
         let tokens = &all_tokens[1..];
 
-        (match keyword {
-            Keyword::Create => self.parse_statement_create(input, tokens),
-            Keyword::Insert => self.parse_statement_insert(input, tokens),
-            Keyword::Select => self.parse_statement_select(input, tokens),
+        (match reserved_word {
+            ReservedWord::Create => self.parse_statement_create(input, tokens),
+            ReservedWord::Insert => self.parse_statement_insert(input, tokens),
+            ReservedWord::Select => self.parse_statement_select(input, tokens),
 
             _ => Err(StatementParseError::StartUnknownKeyword {
                 found: first_token.as_string(input),
-                keyword,
+                reserved_word,
             })
         }, all_tokens)
     }
@@ -307,10 +313,10 @@ impl Parser {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Database) => return self.parse_statement_create_database(input, tokens),
-            TokenKind::Keyword(Keyword::Schema) => return self.parse_statement_create_schema(input, tokens),
-            TokenKind::Keyword(Keyword::Table) => return self.parse_statement_create_table(input, tokens),
-            TokenKind::Keyword(Keyword::View) => return self.parse_statement_create_view(input, tokens),
+            // TokenKind::NonReservedWord(NonReservedWord::Database) => return self.parse_statement_create_database(input, tokens),
+            TokenKind::NonReservedWord(NonReservedWord::Schema) => return self.parse_statement_create_schema(input, tokens),
+            TokenKind::ReservedWord(ReservedWord::Table) => return self.parse_statement_create_table(input, tokens),
+            TokenKind::NonReservedWord(NonReservedWord::View) => return self.parse_statement_create_view(input, tokens),
 
             _ => Err(StatementParseError::CreateStatementUnexpectedFollowUpToken {
                 found: tokens[0].as_string(input),
@@ -356,12 +362,12 @@ impl Parser {
         }
 
         let table_name = match tokens[0].kind() {
-            TokenKind::Keyword(keyword) => return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword{
+            TokenKind::ReservedWord(reserved_word) => return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
                 found: tokens[0].as_string(input),
-                keyword,
+                reserved_word,
             }),
 
-            TokenKind::Identifier => {
+            TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
                 let name = tokens[0].as_string(input);
                 tokens = &tokens[1..];
                 name
@@ -422,7 +428,7 @@ impl Parser {
     }
 
     /// Parses the rest of the statement when the first token was the
-    /// **`INSERT`** identifier keyword.
+    /// **`INSERT`** reserved word.
     fn parse_statement_insert<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::InsertStatementEndOfFile {
@@ -431,11 +437,11 @@ impl Parser {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Into) => self.parse_statement_insert_into(input, &tokens[1..]),
+            TokenKind::ReservedWord(ReservedWord::Into) => self.parse_statement_insert_into(input, &tokens[1..]),
 
-            TokenKind::Keyword(keyword) => Err(StatementParseError::InsertStatementUnexpectedKeyword {
+            TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::InsertStatementUnexpectedKeyword {
                 found: tokens[0].as_string(input),
-                keyword,
+                reserved_word,
             }),
 
             _ => Err(StatementParseError::InsertStatementUnexpectedToken {
@@ -454,7 +460,7 @@ impl Parser {
             });
         }
 
-        if tokens[0].kind() != TokenKind::Identifier {
+        if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
             return Err(StatementParseError::InsertIntoStatementUnexpectedToken {
                 found: tokens[0].as_string(input),
                 token_kind: tokens[0].kind()
@@ -497,14 +503,14 @@ impl Parser {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Distinct) => return self.parse_statement_select_set_quantifier(input, &tokens[1..], SetQuantifier::Distinct),
-            TokenKind::Keyword(Keyword::All) => return self.parse_statement_select_set_quantifier(input, &tokens[1..], SetQuantifier::All),
+            TokenKind::ReservedWord(ReservedWord::Distinct) => return self.parse_statement_select_set_quantifier(input, &tokens[1..], SetQuantifier::Distinct),
+            TokenKind::ReservedWord(ReservedWord::All) => return self.parse_statement_select_set_quantifier(input, &tokens[1..], SetQuantifier::All),
             _ => self.parse_statement_select_set_quantifier(input, tokens, SetQuantifier::default()),
         }
     }
 
     /// Parses the rest of the statement when the first token was the
-    /// **`SELECT`** identifier keyword and the `<set quantifier>` portion
+    /// **`SELECT`** reserved word and the `<set quantifier>` portion
     /// was parsed.
     fn parse_statement_select_set_quantifier<'input>(&self, input: &'input str, mut tokens: &[Token], set_quantifier: SetQuantifier) -> StatementResult<'input> {
         let select_list = self.parse_select_list(input, &mut tokens)?;
@@ -515,7 +521,7 @@ impl Parser {
             table_expression: None
         };
 
-        if !is_end_of_statement(tokens) && tokens[0].kind() == TokenKind::Keyword(Keyword::From) {
+        if !is_end_of_statement(tokens) && tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::From) {
             query_specification.table_expression = Some(self.parse_statement_select_table_expression(
                 input, &mut tokens
             )?);
@@ -559,7 +565,7 @@ impl Parser {
         };
 
         if !is_end_of_statement(tokens) {
-            if tokens[0].kind() == TokenKind::Keyword(Keyword::Having) {
+            if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Having) {
                 return Err(StatementParseError::UnsupportedFeature {
                     feature_name: "HAVING clause",
                     feature_description: "Filtering based on the GROUP BY clause",
@@ -571,8 +577,8 @@ impl Parser {
             let mut toks = tokens.iter()
                 .map(|tok| tok.kind());
 
-            if toks.next() == Some(TokenKind::Keyword(Keyword::Group))
-                 && toks.next() == Some(TokenKind::Keyword(Keyword::By)) {
+            if toks.next() == Some(TokenKind::ReservedWord(ReservedWord::Group))
+                 && toks.next() == Some(TokenKind::ReservedWord(ReservedWord::By)) {
                 return Err(StatementParseError::UnsupportedFeature {
                     feature_name: "GROUP BY clause",
                     feature_description: "Grouping the SELECT statement columns",
@@ -581,7 +587,7 @@ impl Parser {
                 });
             }
 
-            if tokens[0].kind() == TokenKind::Keyword(Keyword::Where) {
+            if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Where) {
                 return Err(StatementParseError::UnsupportedFeature {
                     feature_name: "WHERE clause",
                     feature_description: "Filtering the SELECT statement columns",
@@ -600,7 +606,7 @@ impl Parser {
             return Err(StatementParseError::FromClauseUnexpectedEof);
         }
 
-        if tokens[0].kind() != TokenKind::Keyword(Keyword::From) {
+        if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::From) {
             return Err(StatementParseError::FromClauseUnexpectedToken {
                 found: tokens[0].as_string(input),
                 token_kind: tokens[0].kind()
@@ -747,14 +753,14 @@ impl Parser {
 
         // If the first token is a keyword, the user might've forgotten to
         // escape it so it becomes an identifier.
-        if let TokenKind::Keyword(keyword) = tokens[0].kind() {
+        if let TokenKind::ReservedWord(reserved_word) = tokens[0].kind() {
             return Err(StatementParseError::TableElementSingleExpectedIdentifierAsColumnNameButGotKeyword {
                 found: tokens[0].as_string(input),
-                keyword,
+                reserved_word,
             });
         }
 
-        if tokens[0].kind() != TokenKind::Identifier {
+        if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
             return Err(StatementParseError::TableElementSingleExpectedIdentifierAsColumnName {
                 found: tokens[0].as_string(input),
                 token_kind: tokens[0].kind()
@@ -768,23 +774,23 @@ impl Parser {
             return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAfterColumnName);
         }
 
-        let data_type_keyword_token = tokens[0];
+        let data_type_reserved_word_token = tokens[0];
         tokens = &tokens[1..];
 
-        let TokenKind::Keyword(data_type_keyword) = data_type_keyword_token.kind() else {
+        let TokenKind::ReservedWord(data_type_reserved_word) = data_type_reserved_word_token.kind() else {
             return Err(StatementParseError::TableElementSingleExpectedKeywordAsDataType {
-                found: data_type_keyword_token.as_string(input),
-                token_kind: data_type_keyword_token.kind(),
+                found: data_type_reserved_word_token.as_string(input),
+                token_kind: data_type_reserved_word_token.kind(),
             })
         };
 
-        let data_type = match data_type_keyword {
-            Keyword::Int | Keyword::Integer => DataType::Predefined(
+        let data_type = match data_type_reserved_word {
+            ReservedWord::Int | ReservedWord::Integer => DataType::Predefined(
                 PredefinedType::Numeric(NumericType::Integer)
             ),
             _ => return Err(StatementParseError::TableElementSingleUnknownDataTypeKeyword {
-                found: data_type_keyword_token.as_string(input),
-                keyword: data_type_keyword,
+                found: data_type_reserved_word_token.as_string(input),
+                reserved_word: data_type_reserved_word,
             })
         };
 
@@ -876,7 +882,7 @@ impl Parser {
         *tokens = &tokens[1..];
 
         match first_token.kind() {
-            TokenKind::Identifier => {
+            TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
                 let correlation_name = self.parse_correlation_name_optional(input, tokens)?;
                 return Ok(TableReference::Primary(
                     TablePrimary {
@@ -886,9 +892,9 @@ impl Parser {
                 ))
             }
 
-            TokenKind::Keyword(keyword) => Err(StatementParseError::TableReferenceUnexpectedKeyword {
+            TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::TableReferenceUnexpectedKeyword {
                 found: first_token.as_string(input),
-                keyword
+                reserved_word
             }),
 
             _ => Err(StatementParseError::TableReferenceUnexpectedToken {
@@ -928,10 +934,10 @@ impl Parser {
             // <basic identifier chain> ::=
             //     <identifier chain>
             // ```
-            TokenKind::Identifier => {
+            TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
                 let mut identifier_chain = vec![first_token.as_string(input).to_owned()];
                 while tokens.len() >= 2 && tokens[0].kind() == TokenKind::FullStop {
-                    if tokens[1].kind() == TokenKind::Identifier {
+                    if matches!(tokens[1].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
                         identifier_chain.push(tokens[1].as_string(input).to_owned());
                     }
                     *tokens = &tokens[2..];
@@ -939,7 +945,7 @@ impl Parser {
                 Ok(ValueExpression::ColumnReference(ColumnReference::BasicIdentifierChain(identifier_chain)))
             }
 
-            TokenKind::Keyword(Keyword::Count) => Ok(
+            TokenKind::ReservedWord(ReservedWord::Count) => Ok(
                 ValueExpression::SetFunctionSpecification(
                     self.parse_set_function_specification_count(input, tokens)?
                 )
@@ -1001,11 +1007,11 @@ pub enum StatementParseError<'input> {
     #[error("unexpected end-of-file: expected identifier as the correlation name (alias)")]
     CorrelationNameUnexpectedEndOfFile,
 
-    #[error("unexpected keyword: `{keyword}` (`{found}`): expected an identifier as the name of the correlation name (alias)")]
+    #[error("unexpected keyword: `{reserved_word}` (`{found}`): expected an identifier as the name of the correlation name (alias)")]
     #[strum(props(Hint="Did you forget to escape the identifier?"))]
-    CorrelationNameUnexpectedKeyword {
+    CorrelationNameUnexpectedReservedWord {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token: `{token_kind}` (`{found}`): expected the name of the correlation name (alias)")]
@@ -1026,11 +1032,11 @@ pub enum StatementParseError<'input> {
         found: &'input str,
     },
 
-    #[error("unexpected keyword: `{keyword}` (`{found}`): expected an identifier as the name of the table to create.")]
+    #[error("unexpected keyword: `{reserved_word}` (`{found}`): expected an identifier as the name of the table to create.")]
     #[strum(props(Hint="Did you forget to escape the identifier?"))]
     CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token: `{token_kind}` (`{found}`): expected an identifier as the name of the table to create.")]
@@ -1083,11 +1089,11 @@ pub enum StatementParseError<'input> {
         found: &'input str,
     },
 
-    #[error("unexpected keyword {keyword} (`{found}`), expected `VALUES` keyword")]
+    #[error("unexpected keyword {reserved_word} (`{found}`), expected `VALUES` keyword")]
     #[strum(props(Help="Replace this with the `VALUES` keyword"))]
     InsertColumnsAndSourceUnexpectedKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token {token_kind} (`{found}`), expected `VALUES` keyword")]
@@ -1105,12 +1111,12 @@ pub enum StatementParseError<'input> {
         found: &'input str,
     },
 
-    #[error("unexpected keyword {keyword} (`{found}`), expected `INTO` keyword")]
+    #[error("unexpected keyword {reserved_word} (`{found}`), expected `INTO` keyword")]
     #[strum(props(Hint="`INSERT` must be followed by the `INTO` keyword."))]
     #[strum(props(Help="Replace it with the `INTO` keyword: `INSERT INTO`"))]
     InsertStatementUnexpectedKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token {token_kind} (`{found}`), expected `INTO` keyword")]
@@ -1192,10 +1198,10 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
-    #[error("unexpected keyword {keyword:?} as start of statement: `{found}`")]
+    #[error("unexpected keyword {reserved_word:?} as start of statement: `{found}`")]
     StartUnknownKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token: {token_kind} (`{found}`), expected keyword as column data type")]
@@ -1212,12 +1218,12 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
-    #[error("unexpected keyword: {keyword} (`{found}`), expected identifier as column name")]
+    #[error("unexpected keyword: {reserved_word} (`{found}`), expected identifier as column name")]
     #[strum(props(Hint="Did you forget to escape the column name?"))]
-    #[strum(props(Help="`{keyword}` is reserved as a keyword"))]
+    #[strum(props(Help="`{reserved_word}` is reserved as a keyword"))]
     TableElementSingleExpectedIdentifierAsColumnNameButGotKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected end-of-file after the column name")]
@@ -1227,10 +1233,10 @@ pub enum StatementParseError<'input> {
     #[error("unexpected end-of-file at the beginning of <table element>")]
     TableElementSingleUnexpectedEndOfFileAtBeginning,
 
-    #[error("unknown keyword `{found}`, expected data type for column definition")]
+    #[error("unknown keyword {reserved_word} (`{found}`), expected data type for column definition")]
     TableElementSingleUnknownDataTypeKeyword {
         found: &'input str,
-        keyword: Keyword,
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token {token_kind} (`{found}`), expected opening parenthesis `(` for opening the column list")]
@@ -1277,12 +1283,12 @@ pub enum StatementParseError<'input> {
     #[strum(props(Hint="Did you forget to add a table name?"))]
     TableReferenceUnexpectedEndOfFile,
 
-    #[error("unexpected keyword: {keyword} (`{found}`), expected a table reference")]
+    #[error("unexpected keyword: {reserved_word} (`{found}`), expected a table reference")]
     #[strum(props(Hint="Did you forget to escape the table or schema name?"))]
-    #[strum(props(Help="`{keyword}` is reserved as a keyword"))]
+    #[strum(props(Help="`{reserved_word}` is reserved as a keyword"))]
     TableReferenceUnexpectedKeyword {
         found: &'input str,
-        keyword: Keyword
+        reserved_word: ReservedWord,
     },
 
     #[error("unexpected token: {token_kind} (`{found}`), expected a table reference")]
@@ -1323,12 +1329,12 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[rstest]
-    #[case("CREATE TABLE table (id INT);", Keyword::Table, 13..18)]
-    #[case("CREATE TABLE character (value INT);", Keyword::Character, 13..22)]
-    fn parser_create_table_statement_keyword_as_table_name(#[case] input: &str, #[case] keyword: Keyword, #[case] range: Range<usize>) {
+    #[case("CREATE TABLE table (id INT);", ReservedWord::Table, 13..18)]
+    #[case("CREATE TABLE character (value INT);", ReservedWord::Character, 13..22)]
+    fn parser_create_table_statement_keyword_as_table_name(#[case] input: &str, #[case] reserved_word: ReservedWord, #[case] range: Range<usize>) {
         let expected = StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
             found: &input[range],
-            keyword,
+            reserved_word,
         };
 
         assert_eq!(Parser::new().parse_statement(input), Err(expected));
@@ -1510,7 +1516,7 @@ mod tests {
     #[rstest]
     #[case("SELECT * FROM my_table", &["my_table"], &[None])]
     #[case("SELECT * FROM ends_with_semicolon;", &["ends_with_semicolon"], &[None])]
-    #[case("SELECT * FROM correlation AS corr;", &["correlation"], &[Some("corr")])]
+    #[case("SELECT * FROM correlation AS correl;", &["correlation"], &[Some("correl")])]
     #[case("SELECT * FROM my_table AS tbl", &["my_table"], &[Some("tbl")])]
     #[case("SELECT * FROM table1, table2", &["table1", "table2"], &[None, None])]
     // This is an evaluation error, not a parse error.
@@ -1570,7 +1576,7 @@ mod tests {
     #[rstest]
     #[case("SELECT *,", TokenKind::Comma, 8..)]
     #[case("SELECT * *", TokenKind::Asterisk, 9..)]
-    #[case("SELECT * select", TokenKind::Keyword(Keyword::Select), 9..)]
+    #[case("SELECT * select", TokenKind::ReservedWord(ReservedWord::Select), 9..)]
     fn parser_invalid_tokens_after_simple_select(#[case] input: &str, #[case] token_kind: TokenKind, #[case] range: RangeFrom<usize>) {
         let parser = Parser::new();
 

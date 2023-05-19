@@ -1,7 +1,11 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use raccolta_syntax::{Lexer, TokenKind, Keyword};
+use raccolta_syntax::{
+    keyword::ReservedWord,
+    Lexer,
+    TokenKind,
+};
 use strum::IntoEnumIterator;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -58,7 +62,7 @@ impl inquire::Autocomplete for AutoCompleter {
         }
 
         match tokens[0].kind() {
-            TokenKind::Keyword(Keyword::Create) => {
+            TokenKind::ReservedWord(ReservedWord::Create) => {
                 let words = ["DATABASE", "SCHEMA", "TABLE", "VIEW"];
                 if tokens.len() == 1{
                     return Ok(words.iter().map(|word| word.to_string()).collect());
@@ -69,7 +73,7 @@ impl inquire::Autocomplete for AutoCompleter {
                 }
             }
 
-            TokenKind::Keyword(Keyword::Insert) => {
+            TokenKind::ReservedWord(ReservedWord::Insert) => {
                 if tokens.len() == 1 {
                     return Ok(vec!["INTO".into()]);
                 }
@@ -83,7 +87,7 @@ impl inquire::Autocomplete for AutoCompleter {
 
             TokenKind::Identifier => {
                 if tokens.len() == 1 {
-                    return Ok(filter_keywords(Keyword::iter(), tokens[0].as_string(input)))
+                    return Ok(filter_keywords(ReservedWord::iter(), tokens[0].as_string(input)))
                 }
             }
 

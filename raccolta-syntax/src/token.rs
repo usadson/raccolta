@@ -1,7 +1,10 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use super::Keyword;
+use crate::keyword::{
+    NonReservedWord,
+    ReservedWord,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Token {
@@ -46,8 +49,11 @@ pub enum TokenKind {
     /// The '>' character.
     GreaterThanSign,
 
-    /// A [`Keyword`].
-    Keyword(Keyword),
+    /// A [`NonReservedWord`].
+    NonReservedWord(NonReservedWord),
+
+    /// A [`ReservedWord`].
+    ReservedWord(ReservedWord),
 
     /// An unsigned integer [`u64`].
     UnsignedInteger(u64),
@@ -77,10 +83,19 @@ pub enum TokenKind {
 }
 
 impl TokenKind {
-    /// Converts this token kind to a [`Keyword`] if applicable.
-    pub const fn to_keyword(&self) -> Option<Keyword> {
-        if let TokenKind::Keyword(keyword) = self {
-            Some(*keyword)
+    /// Converts this token kind to a [`NonReservedWord`] if applicable.
+    pub const fn to_non_reserved_word(&self) -> Option<NonReservedWord> {
+        if let TokenKind::NonReservedWord(non_reserved_word) = self {
+            Some(*non_reserved_word)
+        } else {
+            None
+        }
+    }
+
+    /// Converts this token kind to a [`ReservedWord`] if applicable.
+    pub const fn to_reserved_word(&self) -> Option<ReservedWord> {
+        if let TokenKind::ReservedWord(reserved_word) = self {
+            Some(*reserved_word)
         } else {
             None
         }

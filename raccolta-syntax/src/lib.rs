@@ -12,6 +12,7 @@ pub mod statement;
 pub mod token;
 
 pub use keyword::Keyword;
+use keyword::{ReservedWord, NonReservedWord};
 pub use token::{Token, TokenKind};
 
 pub use parse::{
@@ -71,9 +72,13 @@ impl<'a> Lexer<'a> {
 
                 let str = &self.input[first_character_byte_idx..self.character_byte_idx];
 
-                match Keyword::iter().find(|keyword| keyword.as_ref().eq_ignore_ascii_case(str)) {
-                    Some(keyword) => TokenKind::Keyword(keyword),
-                    None => TokenKind::Identifier
+                match ReservedWord::iter().find(|reserved_word| reserved_word.as_ref().eq_ignore_ascii_case(str)) {
+                    Some(reserved_word) => TokenKind::ReservedWord(reserved_word),
+
+                    None => match NonReservedWord::iter().find(|non_reserved_word| non_reserved_word.as_ref().eq_ignore_ascii_case(str)) {
+                        Some(non_reserved_word) => TokenKind::NonReservedWord(non_reserved_word),
+                        None => TokenKind::Identifier
+                    }
                 }
             }
 
@@ -185,11 +190,11 @@ mod tests {
             .collect();
 
         assert_eq!(tokens, vec![
-            Token::new(0, 6, TokenKind::Keyword(Keyword::Select)),
+            Token::new(0, 6, TokenKind::ReservedWord(ReservedWord::Select)),
 
             Token::new(7, 8, TokenKind::Asterisk),
 
-            Token::new(9, 13, TokenKind::Keyword(Keyword::From)),
+            Token::new(9, 13, TokenKind::ReservedWord(ReservedWord::From)),
 
             Token::new(14, 24, TokenKind::Identifier),
 

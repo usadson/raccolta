@@ -2,7 +2,10 @@
 // All Rights Reserved.
 
 use crate::{
-    Keyword,
+    keyword::{
+        ReservedWord,
+        NonReservedWord,
+    },
     Token,
     TokenKind,
 };
@@ -17,10 +20,16 @@ pub(super) trait ParseArrayExtensions {
     }
 
     /// Consumes a specific [`Keyword`].
-    fn consume_keyword(self: &mut &Self, keyword: Keyword) -> bool;
+    fn consume_reserved_word(self: &mut &Self, reserved_word: ReservedWord) -> bool;
 
-    /// Checks if the following token is of type [`Keyword`].
-    fn is_keyword(&self) -> Option<Keyword>;
+    /// Consumes a specific [`Keyword`].
+    fn consume_non_reserved_word(self: &mut &Self, non_reserved_word: NonReservedWord) -> bool;
+
+    /// Checks if the following token is of type [`NonReservedWord`].
+    fn is_non_reserved_word(&self) -> Option<NonReservedWord>;
+
+    /// Checks if the following token is of type [`ReservedWord`].
+    fn is_reserved_word(&self) -> Option<ReservedWord>;
 
     fn next(self: &mut &Self);
 }
@@ -37,8 +46,8 @@ impl ParseArrayExtensions for [Token] {
         None
     }
 
-    fn consume_keyword(self: &mut &Self, keyword: Keyword) -> bool {
-        if self.is_keyword() == Some(keyword) {
+    fn consume_reserved_word(self: &mut &Self, reserved_word: ReservedWord) -> bool {
+        if self.is_reserved_word() == Some(reserved_word) {
             self.next();
             true
         } else {
@@ -46,9 +55,24 @@ impl ParseArrayExtensions for [Token] {
         }
     }
 
-    fn is_keyword(&self) -> Option<Keyword> {
+    fn consume_non_reserved_word(self: &mut &Self, non_reserved_word: NonReservedWord) -> bool {
+        if self.is_non_reserved_word() == Some(non_reserved_word) {
+            self.next();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn is_reserved_word(&self) -> Option<ReservedWord> {
         self.get(0)
-            .map(|token| token.kind().to_keyword())
+            .map(|token| token.kind().to_reserved_word())
+            .flatten()
+    }
+
+    fn is_non_reserved_word(&self) -> Option<NonReservedWord> {
+        self.get(0)
+            .map(|token| token.kind().to_non_reserved_word())
             .flatten()
     }
 
