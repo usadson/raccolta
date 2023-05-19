@@ -2019,8 +2019,20 @@ pub enum ReservedWord {
     Asensitive,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Asin,
+
+    /// # About
     /// **Specification:** SQL 1999
     Asymmetric,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    At,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Atan,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2040,21 +2052,54 @@ pub enum ReservedWord {
     Begin,
 
     /// # About
+    /// **Specification:** SQL 2016
+    BeginFrame,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    BeginPartition,
+
+    /// # About
     /// **Specification:** SQL 1986
     Between,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Bigint,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Binary,
+
+    /*
+    /// # About
     /// **Specification:** SQL 1999
     Bitvar,
-
     /// # About
     /// **Specification:** SQL 1999
     BitLength,
+    */
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Blob,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Boolean,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Both,
 
     /// # About
     /// **Specification:** SQL 1986
     By,
 
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Call,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2063,6 +2108,30 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Cardinality,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Cascaded,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Case,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Cast,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Ceil,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Ceiling,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    CharLength,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2077,16 +2146,22 @@ pub enum ReservedWord {
     CharacterLength,
 
     /// # About
-    /// **Specification:** SQL 1999
-    CharLength,
-
-    /// # About
     /// **Specification:** SQL 1986
     Check,
 
+/*
     /// # About
     /// **Specification:** SQL 1999
     Checked,
+*/
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Classifier,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Clob,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2097,8 +2172,32 @@ pub enum ReservedWord {
     Coalesce,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Collate,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Collect,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Column,
+
+    /// # About
     /// **Specification:** SQL 1986
     Commit,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Condition,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Connect,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Constraint,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2109,21 +2208,121 @@ pub enum ReservedWord {
     Convert,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Copy,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Corr,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Corresponding,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Cos,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Cosh,
+
+    /// # About
     /// **Specification:** SQL 1986
     Count,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CovarPop,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CovarSamp,
 
     /// # About
     /// **Specification:** SQL 1986
     Create,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Cross,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Cube,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CumeDist,
+
+    /// # About
     /// **Specification:** SQL 1986
     Current,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentCatalog,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentDate,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentDefaultTransformGroup,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentPath,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentRole,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentRow,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentSchema,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentTime,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentTimestamp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentTransformGroupForType,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    CurrentUser,
 
     /// # About
     /// **Specification:** SQL 1986
     Cursor,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Cycle,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Date,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Day,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Deallocate,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2134,12 +2333,44 @@ pub enum ReservedWord {
     Decimal,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Decfloat,
+
+    /// # About
     /// **Specification:** SQL 1986
     Declare,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Default,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Define,
+
+    /// # About
     /// **Specification:** SQL 1986
     Delete,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    DenseRank,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Deref,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Describe,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Deterministic,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Disconnect,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2149,26 +2380,89 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Double,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Drop,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Dynamic,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Each,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Element,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Else,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Empty,
 
     /// # About
     /// **Specification:** SQL 1986
     End,
 
     /// # About
+    /// **Specification:** SQL 2016
+    EndFrame,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    EndPartition,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    #[strum(to_string="END-EXEC")]
+    EndExec,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Equals,
+
+    /// # About
     /// **Specification:** SQL 1986
     Escape,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Every,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Except,
 
     /// # About
     /// **Specification:** SQL 1986
     Exec,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Execute,
+
+    /*
+    /// # About
     /// **Specification:** SQL 1999
     Existing,
+    */
 
     /// # About
     /// **Specification:** SQL 1986
     Exists,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Exp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    External,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2176,21 +2470,69 @@ pub enum ReservedWord {
 
 
     /// # About
+    /// **Specification:** SQL 2016
+    False,
+
+    /// # About
     /// **Specification:** SQL 1986
     Fetch,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Filter,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    FirstValue,
 
     /// # About
     /// **Specification:** SQL 1986
     Float,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Floor,
+
+    /// # About
     /// **Specification:** SQL 1986
     For,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Foreign,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    FrameRow,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Free,
 
     /// # About
     /// **Specification:** SQL 1986
     From,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Full,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Function,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Fusion,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Get,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Global,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2199,6 +2541,14 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Group,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Grouping,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Groups,
 
 
     /// # About
@@ -2209,6 +2559,14 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1999
     Hold,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Hour,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Identity,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2221,6 +2579,18 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Infix,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Initial,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Inner,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Inout,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2239,6 +2609,18 @@ pub enum ReservedWord {
     Integer,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Intersect,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Intersection,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Interval,
+
+    /// # About
     /// **Specification:** SQL 1986
     Into,
 
@@ -2248,20 +2630,146 @@ pub enum ReservedWord {
 
 
     /// # About
+    /// **Specification:** SQL 2016
+    Join,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonArray,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonArrayagg,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonExists,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonObject,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonObjectagg,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonQuery,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonTable,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonTablePrimitive,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    JsonValue,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Lag,
+
+    /// # About
     /// **Specification:** SQL 1986
     Language,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Large,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    LastValue,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Lateral,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Lead,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Leading,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Left,
 
     /// # About
     /// **Specification:** SQL 1986
     Like,
 
     /// # About
+    /// **Specification:** SQL 2016
+    LikeRegex,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Listagg,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Ln,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Local,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Localtime,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Localtimestamp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Log,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Log10,
+
+    /// # About
     /// **Specification:** SQL 1999
     Lower,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Match,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    MatchNumber,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    MatchRecognize,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Matches,
 
     /// # About
     /// **Specification:** SQL 1986
     Max,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Member,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Merge,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -2272,17 +2780,73 @@ pub enum ReservedWord {
     Min,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Minute,
+
+    /// # About
     /// **Specification:** SQL 1999
     Mod,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Modifies,
 
     /// # About
     /// **Specification:** SQL 1986
     Module,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Month,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Multiset,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    National,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Natural,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nchar,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Nclob,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    New,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    No,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    None,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Normalize,
 
     /// # About
     /// **Specification:** SQL 1986
     Not,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    NthValue,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Ntile,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2291,7 +2855,6 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Nullif,
-
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2303,12 +2866,36 @@ pub enum ReservedWord {
     OctetLength,
 
     /// # About
+    /// **Specification:** SQL 2016
+    OccurrencesRegex,
+
+    /// # About
     /// **Specification:** SQL 1986
     Of,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Offset,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Old,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Omit,
+
+    /// # About
     /// **Specification:** SQL 1986
     On,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    One,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Only,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2323,6 +2910,18 @@ pub enum ReservedWord {
     Order,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Out,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Outer,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Over,
+
+    /// # About
     /// **Specification:** SQL 1999
     Overlaps,
 
@@ -2332,26 +2931,222 @@ pub enum ReservedWord {
 
 
     /// # About
+    /// **Specification:** SQL 2016
+    Parameter,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Partition,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Pattern,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Per,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Percent,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    PercentRank,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    PercentileCont,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    PercentileDisc,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Period,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Portion,
+
+    /// # About
     /// **Specification:** SQL 1999
     Position,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    PositionRegex,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Power,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Precedes,
 
     /// # About
     /// **Specification:** SQL 1986
     Precision,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Prepare,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Primary,
+
+    /// # About
     /// **Specification:** SQL 1986
     Procedure,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Ptf,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Range,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Rank,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Reads,
 
     /// # About
     /// **Specification:** SQL 1986
     Real,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Recursive,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Ref,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    References,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Referencing,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrAvgx,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrAvgy,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrCount,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrIntercept,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrR2,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrSlope,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrSxx,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrSxy,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RegrSyy,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Release,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Result,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Return,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Returns,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Revoke,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Right,
+
+    /// # About
     /// **Specification:** SQL 1986
     Rollback,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Rollup,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Row,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    RowNumber,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Rows,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Running,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Savepoint,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Scope,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Scroll,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Search,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Second,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Seek,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2362,28 +3157,32 @@ pub enum ReservedWord {
     Sensitive,
 
     /// # About
+    /// **Specification:** SQL 2016
+    SessionUser,
+
+    /// # About
     /// **Specification:** SQL 1986
     Set,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Show,
 
     /// # About
     /// **Specification:** SQL 1999
     Similar,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Sublist,
+    /// **Specification:** SQL 2016
+    Sin,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Substring,
+    /// **Specification:** SQL 2016
+    Sinh,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Symmetric,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    System,
+    /// **Specification:** SQL 2016
+    Skip,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2394,6 +3193,14 @@ pub enum ReservedWord {
     Some,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Specific,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Specifictype,
+
+    /// # About
     /// **Specification:** SQL 1986
     Sql,
 
@@ -2402,12 +3209,84 @@ pub enum ReservedWord {
     Sqlcode,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Sqlexception,
+
+    /// # About
     /// **Specification:** SQL 1986
     Sqlerror,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Sqlstate,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Sqlwarning,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Sqrt,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Start,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Static,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    StddevPop,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    StddevSamp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Submultiset,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Sublist,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Subset,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Substring,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    SubstringRegex,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Succeeds,
+
+    /// # About
     /// **Specification:** SQL 1986
     Sum,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Symmetric,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    System,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    SystemTime,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    SystemUser,
 
 
     /// # About
@@ -2415,17 +3294,85 @@ pub enum ReservedWord {
     Table,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Tablesample,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Tan,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Tanh,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Then,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Time,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Timestamp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    TimezoneHour,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    TimezoneMinute,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    To,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Trailing,
+
+    /// # About
     /// **Specification:** SQL 1999
     Translate,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    TranslateRegex,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Translation,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Treat,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Trigger,
 
     /// # About
     /// **Specification:** SQL 1999
     Trim,
 
     /// # About
-    /// **Specification:** SQL 1986
-    To,
+    /// **Specification:** SQL 2016
+    TrimArray,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    True,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Truncate,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Uescape,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2434,6 +3381,14 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Unique,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Unknown,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Unnest,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2447,11 +3402,51 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     User,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    Using,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Value,
 
     /// # About
     /// **Specification:** SQL 1986
     Values,
 
+    /// # About
+    /// **Specification:** SQL 2016
+    ValueOf,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    VarPop,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    VarSamp,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Varbinary,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Varchar,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Varying,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Versioning,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    When,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2462,8 +3457,29 @@ pub enum ReservedWord {
     Where,
 
     /// # About
+    /// **Specification:** SQL 2016
+    WidthBucket,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Window,
+
+    /// # About
     /// **Specification:** SQL 1986
     With,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Within,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Without,
+
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Year,
 }
 
 #[cfg(test)]
@@ -2607,5 +3623,116 @@ mod tests {
             panic!("<non-reserved word> {} found in [`NonReservedWord`] enum, but are not SQL 2016!",
                 difference.join(", "));
         }
+    }
+
+    const SQL_2016_EBNF_RESERVED_WORDS: &str = "    ABS | ACOS | ALL | ALLOCATE | ALTER | AND | ANY | ARE | ARRAY | ARRAY_AGG
+    | ARRAY_MAX_CARDINALITY | AS | ASENSITIVE | ASIN | ASYMMETRIC | AT | ATAN
+    | ATOMIC | AUTHORIZATION | AVG
+
+    | BEGIN | BEGIN_FRAME | BEGIN_PARTITION | BETWEEN | BIGINT | BINARY
+    | BLOB | BOOLEAN | BOTH | BY
+
+    | CALL | CALLED | CARDINALITY | CASCADED | CASE | CAST | CEIL | CEILING
+    | CHAR | CHAR_LENGTH | CHARACTER | CHARACTER_LENGTH | CHECK | CLASSIFIER | CLOB
+    | CLOSE | COALESCE | COLLATE | COLLECT | COLUMN | COMMIT | CONDITION | CONNECT
+    | CONSTRAINT | CONTAINS | CONVERT | COPY | CORR | CORRESPONDING | COS | COSH
+    | COUNT | COVAR_POP | COVAR_SAMP | CREATE | CROSS | CUBE | CUME_DIST | CURRENT
+    | CURRENT_CATALOG | CURRENT_DATE | CURRENT_DEFAULT_TRANSFORM_GROUP
+    | CURRENT_PATH | CURRENT_ROLE | CURRENT_ROW | CURRENT_SCHEMA | CURRENT_TIME
+    | CURRENT_TIMESTAMP | CURRENT_PATH | CURRENT_ROLE | CURRENT_TRANSFORM_GROUP_FOR_TYPE
+    | CURRENT_USER | CURSOR | CYCLE
+
+    | DATE | DAY | DEALLOCATE | DEC | DECIMAL | DECFLOAT | DECLARE | DEFAULT | DEFINE
+    | DELETE | DENSE_RANK | DEREF | DESCRIBE | DETERMINISTIC | DISCONNECT | DISTINCT
+    | DOUBLE | DROP | DYNAMIC
+
+    | EACH | ELEMENT | ELSE | EMPTY | END | END_FRAME | END_PARTITION | END-EXEC
+    | EQUALS | ESCAPE | EVERY | EXCEPT | EXEC | EXECUTE | EXISTS | EXP
+    | EXTERNAL | EXTRACT
+
+    | FALSE | FETCH | FILTER | FIRST_VALUE | FLOAT | FLOOR | FOR | FOREIGN
+    | FRAME_ROW | FREE | FROM | FULL | FUNCTION | FUSION
+
+    | GET | GLOBAL | GRANT | GROUP | GROUPING | GROUPS
+
+    | HAVING | HOLD | HOUR
+
+    | IDENTITY | IN | INDICATOR | INITIAL | INNER | INOUT | INSENSITIVE | INSERT
+    | INT | INTEGER | INTERSECT | INTERSECTION | INTERVAL | INTO | IS
+
+    | JOIN | JSON_ARRAY | JSON_ARRAYAGG | JSON_EXISTS | JSON_OBJECT
+    | JSON_OBJECTAGG | JSON_QUERY | JSON_TABLE | JSON_TABLE_PRIMITIVE | JSON_VALUE
+
+    | LAG | LANGUAGE | LARGE | LAST_VALUE | LATERAL | LEAD | LEADING | LEFT | LIKE
+    | LIKE_REGEX | LISTAGG | LN | LOCAL | LOCALTIME | LOCALTIMESTAMP | LOG | LOG10 | LOWER
+
+    | MATCH | MATCH_NUMBER | MATCH_RECOGNIZE | MATCHES | MAX | MEMBER
+    | MERGE | METHOD | MIN | MINUTE | MOD | MODIFIES | MODULE | MONTH | MULTISET
+
+    | NATIONAL | NATURAL | NCHAR | NCLOB | NEW | NO | NONE | NORMALIZE | NOT
+    | NTH_VALUE | NTILE | NULL | NULLIF | NUMERIC
+
+    | OCTET_LENGTH | OCCURRENCES_REGEX | OF | OFFSET | OLD | OMIT | ON | ONE
+    | ONLY | OPEN | OR | ORDER | OUT | OUTER | OVER | OVERLAPS | OVERLAY
+
+    | PARAMETER | PARTITION | PATTERN | PER | PERCENT | PERCENT_RANK
+    | PERCENTILE_CONT | PERCENTILE_DISC | PERIOD | PORTION | POSITION | POSITION_REGEX
+    | POWER | PRECEDES | PRECISION | PREPARE | PRIMARY | PROCEDURE | PTF
+
+    | RANGE | RANK | READS | REAL | RECURSIVE | REF | REFERENCES | REFERENCING
+    | REGR_AVGX | REGR_AVGY | REGR_COUNT | REGR_INTERCEPT | REGR_R2 | REGR_SLOPE
+    | REGR_SXX | REGR_SXY | REGR_SYY | RELEASE | RESULT | RETURN | RETURNS
+    | REVOKE | RIGHT | ROLLBACK | ROLLUP | ROW | ROW_NUMBER | ROWS | RUNNING
+
+    | SAVEPOINT | SCOPE | SCROLL | SEARCH | SECOND | SEEK | SELECT | SENSITIVE
+    | SESSION_USER | SET | SHOW | SIMILAR | SIN | SINH | SKIP | SMALLINT | SOME | SPECIFIC
+    | SPECIFICTYPE | SQL | SQLEXCEPTION | SQLSTATE | SQLWARNING | SQRT | START
+    | STATIC | STDDEV_POP | STDDEV_SAMP | SUBMULTISET | SUBSET | SUBSTRING
+    | SUBSTRING_REGEX | SUCCEEDS | SUM | SYMMETRIC | SYSTEM | SYSTEM_TIME
+    | SYSTEM_USER
+
+    | TABLE | TABLESAMPLE | TAN | TANH | THEN | TIME | TIMESTAMP | TIMEZONE_HOUR
+    | TIMEZONE_MINUTE | TO | TRAILING | TRANSLATE | TRANSLATE_REGEX | TRANSLATION | TREAT
+    | TRIGGER | TRIM | TRIM_ARRAY | TRUE | TRUNCATE
+
+    | UESCAPE | UNION | UNIQUE | UNKNOWN | UNNEST | UPDATE    | UPPER | USER | USING
+
+    | VALUE | VALUES | VALUE_OF | VAR_POP | VAR_SAMP | VARBINARY
+    | VARCHAR | VARYING | VERSIONING
+
+    | WHEN | WHENEVER | WHERE | WIDTH_BUCKET | WINDOW | WITH | WITHIN | WITHOUT
+
+    | YEAR";
+
+    /// Ensure all the reserved words of SQL 2016 are in registered in the
+    /// [`super::ReservedWords`] enum.
+    #[test]
+    fn reserved_words_sql_2016_ebnf() {
+        let words: HashSet<&str> = SQL_2016_EBNF_RESERVED_WORDS
+            .split("|")
+            .map(|word| word.trim())
+            .collect();
+
+        let enum_words: Vec<String> = ReservedWord::iter()
+            .map(|word| word.to_string())
+            .collect();
+
+        let enum_words: HashSet<&str> = enum_words.iter().map(|word| word.as_ref()).collect();
+
+        let mut difference = words.difference(&enum_words).map(|word| *word).collect::<Vec<&str>>();
+        difference.sort();
+
+        if !difference.is_empty() {
+            panic!("<reserved word> {} from SQL 2016 not found in [`ReservedWord`] enum!",
+                difference.join(", "));
+        }
+
+        // let mut difference = enum_words.difference(&words).map(|word| *word).collect::<Vec<&str>>();
+        // difference.sort();
+
+        // if !difference.is_empty() {
+        //     panic!("<reserved word> {} found in [`ReservedWord`] enum, but are not SQL 2016!",
+        //         difference.join(", "));
+        // }
     }
 }
