@@ -266,31 +266,37 @@ impl Parser {
 
     /// Parses a statement.
     pub fn parse_statement<'input>(&self, input: &'input str) -> StatementResult<'input> {
-        let mut lexer = Lexer::new(input);
+        self.parse_statement_extended(input).0
+    }
 
-        let Some(first_token) = lexer.consume_token() else {
-            return Err(StatementParseError::EmptyInput);
+    /// Parses a statement and includes the tokens it has received from the
+    /// lexer.
+    pub fn parse_statement_extended<'input>(&self, input: &'input str) -> (StatementResult<'input>, Vec<Token>) {
+        let all_tokens: Vec<_> = Lexer::new(input).collect();
+
+        let Some(first_token) = all_tokens.get(0) else {
+            return (Err(StatementParseError::EmptyInput), all_tokens);
         };
 
         let TokenKind::Keyword(keyword) = first_token.kind() else {
-            return Err(StatementParseError::StartNotAToken {
+            return (Err(StatementParseError::StartNotAToken {
                 found: first_token.as_string(input),
                 token_kind: first_token.kind()
-            });
+            }), all_tokens);
         };
 
-        let tokens: Vec<_> = lexer.collect();
+        let tokens = &all_tokens[1..];
 
-        match keyword {
-            Keyword::Create => self.parse_statement_create(input, &tokens),
-            Keyword::Insert => self.parse_statement_insert(input, &tokens),
-            Keyword::Select => self.parse_statement_select(input, &tokens),
+        (match keyword {
+            Keyword::Create => self.parse_statement_create(input, tokens),
+            Keyword::Insert => self.parse_statement_insert(input, tokens),
+            Keyword::Select => self.parse_statement_select(input, tokens),
 
             _ => Err(StatementParseError::StartUnknownKeyword {
                 found: first_token.as_string(input),
                 keyword,
             })
-        }
+        }, all_tokens)
     }
 
     /// Parses the rest of the statement when the first token was the
