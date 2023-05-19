@@ -812,10 +812,6 @@ pub enum NonReservedWord {
     A,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Abs,
-
-    /// # About
     /// **Specification:** SQL 2003
     Absolute,
 
@@ -847,11 +843,6 @@ pub enum NonReservedWord {
     /// **Specification:** SQL 1986
     Asc,
 
-    /// TODO check this according to SQL 2016
-    /// # About
-    /// **Specification:** SQL 1999
-    Asensitive,
-
     /// # About
     /// **Specification:** SQL 2003
     Assertion,
@@ -859,16 +850,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     Assignment,
-
-    /// TODO check this according to SQL 2016
-    /// # About
-    /// **Specification:** SQL 1999
-    Asymmetric,
-
-    /// TODO check this according to SQL 2016
-    /// # About
-    /// **Specification:** SQL 1999
-    Atomic,
 
     /// # About
     /// **Specification:** SQL 2003
@@ -888,14 +869,6 @@ pub enum NonReservedWord {
     Bernoulli,
 
     /// # About
-    /// **Specification:** SQL 1999
-    BitLength,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Bitvar,
-
-    /// # About
     /// **Specification:** SQL 2003
     Breadth,
 
@@ -903,14 +876,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1992
     C,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Called,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Cardinality,
 
     /// # About
     /// **Specification:** SQL 2003
@@ -933,14 +898,6 @@ pub enum NonReservedWord {
     Chaining,
 
     /// # About
-    /// **Specification:** SQL 1999
-    CharLength,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    CharacterLength,
-
-    /// # About
     /// **Specification:** SQL 1992
     CharacterSetCatalog,
 
@@ -961,16 +918,8 @@ pub enum NonReservedWord {
     Characters,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Checked,
-
-    /// # About
     /// **Specification:** SQL 1992
     ClassOrigin,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Coalesce,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -1049,16 +998,8 @@ pub enum NonReservedWord {
     Constructor,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Contains,
-
-    /// # About
     /// **Specification:** SQL 1986
     Continue,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Convert,
 
     /// # About
     /// **Specification:** SQL 1992
@@ -1186,14 +1127,6 @@ pub enum NonReservedWord {
     /// **Specification:** SQL 2016
     Expression,
 
-    /// # About
-    /// **Specification:** SQL 1999
-    Existing,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Extract,
-
 
     /// # About
     /// **Specification:** SQL 1999
@@ -1317,10 +1250,6 @@ pub enum NonReservedWord {
     /// **Specification:** SQL 1999
     Hierarchy,
 
-    /// # About
-    /// **Specification:** SQL 1999
-    Hold,
-
 
     /// # About
     /// **Specification:** SQL 2016
@@ -1345,11 +1274,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2003
     Increment,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Infix,
-
     /// # About
     /// **Specification:** SQL 2003
     Initially,
@@ -1357,10 +1281,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2016
     Input,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Insensitive,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -1433,10 +1353,6 @@ pub enum NonReservedWord {
     /// **Specification:** SQL 2003
     Locator,
 
-    /// # About
-    /// **Specification:** SQL 1999
-    Lower,
-
 
     /// # About
     /// **Specification:** SQL 1999
@@ -1467,16 +1383,8 @@ pub enum NonReservedWord {
     MessageText,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Method,
-
-    /// # About
     /// **Specification:** SQL 2003
     Minvalue,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Mod,
 
     /// # About
     /// **Specification:** SQL 1992
@@ -1532,10 +1440,6 @@ pub enum NonReservedWord {
     Nullable,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Nullif,
-
-    /// # About
     /// **Specification:** SQL 2003
     Nulls,
 
@@ -1551,10 +1455,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2003
     Octets,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    OctetLength,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -1583,14 +1483,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2016
     Overflow,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Overlaps,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Overlay,
 
     /// # About
     /// **Specification:** SQL 1999
@@ -1664,10 +1556,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Pli,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Position,
 
     /// # About
     /// **Specification:** SQL 2003
@@ -1831,10 +1719,6 @@ pub enum NonReservedWord {
     Self_,
 
     /// # About
-    /// **Specification:** SQL 1999
-    Sensitive,
-
-    /// # About
     /// **Specification:** SQL 2003
     Sequence,
 
@@ -1873,10 +1757,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     SpecificName,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Similar,
 
     /// # About
     /// **Specification:** SQL 2016
@@ -1925,22 +1805,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1992
     SubclassOrigin,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Sublist,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Substring,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Symmetric,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    System,
 
 
     /// # About
@@ -1997,10 +1861,6 @@ pub enum NonReservedWord {
 
     /// # About
     /// **Specification:** SQL 1999
-    Translate,
-
-    /// # About
-    /// **Specification:** SQL 1999
     TriggerCatalog,
 
     /// # About
@@ -2010,10 +1870,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1999
     TriggerName,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Trim,
 
     /// # About
     /// **Specification:** SQL 1992
@@ -2039,10 +1895,6 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 1992
     Unnamed,
-
-    /// # About
-    /// **Specification:** SQL 1999
-    Upper,
 
     /// # About
     /// **Specification:** SQL 2003
@@ -2115,8 +1967,24 @@ pub enum NonReservedWord {
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum ReservedWord {
     /// # About
+    /// **Specification:** SQL 1999
+    Abs,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Acos,
+
+    /// # About
     /// **Specification:** SQL 1986
     All,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Allocate,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Alter,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2127,8 +1995,36 @@ pub enum ReservedWord {
     Any,
 
     /// # About
+    /// **Specification:** SQL 2016
+    Are,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    Array,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    ArrayAgg,
+
+    /// # About
+    /// **Specification:** SQL 2016
+    ArrayMaxCardinality,
+
+    /// # About
     /// **Specification:** SQL 1986
     As,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Asensitive,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Asymmetric,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Atomic,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2148,9 +2044,25 @@ pub enum ReservedWord {
     Between,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Bitvar,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    BitLength,
+
+    /// # About
     /// **Specification:** SQL 1986
     By,
 
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Called,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Cardinality,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2161,16 +2073,40 @@ pub enum ReservedWord {
     Character,
 
     /// # About
+    /// **Specification:** SQL 1999
+    CharacterLength,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    CharLength,
+
+    /// # About
     /// **Specification:** SQL 1986
     Check,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Checked,
 
     /// # About
     /// **Specification:** SQL 1986
     Close,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Coalesce,
+
+    /// # About
     /// **Specification:** SQL 1986
     Commit,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Contains,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Convert,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2227,8 +2163,16 @@ pub enum ReservedWord {
     Exec,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Existing,
+
+    /// # About
     /// **Specification:** SQL 1986
     Exists,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Extract,
 
 
     /// # About
@@ -2247,6 +2191,7 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     From,
 
+
     /// # About
     /// **Specification:** SQL 1986
     Grant,
@@ -2260,6 +2205,10 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Having,
 
+    /// # About
+    /// **Specification:** SQL 1999
+    Hold,
+
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2268,6 +2217,14 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Indicator,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Infix,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Insensitive,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2298,14 +2255,25 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Like,
 
+    /// # About
+    /// **Specification:** SQL 1999
+    Lower,
 
     /// # About
     /// **Specification:** SQL 1986
     Max,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Method,
+
+    /// # About
     /// **Specification:** SQL 1986
     Min,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Mod,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2321,9 +2289,18 @@ pub enum ReservedWord {
     Null,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Nullif,
+
+
+    /// # About
     /// **Specification:** SQL 1986
     Numeric,
 
+
+    /// # About
+    /// **Specification:** SQL 1999
+    OctetLength,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2345,6 +2322,18 @@ pub enum ReservedWord {
     /// **Specification:** SQL 1986
     Order,
 
+    /// # About
+    /// **Specification:** SQL 1999
+    Overlaps,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Overlay,
+
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Position,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2369,8 +2358,32 @@ pub enum ReservedWord {
     Select,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Sensitive,
+
+    /// # About
     /// **Specification:** SQL 1986
     Set,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Similar,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Sublist,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Substring,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Symmetric,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    System,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2402,6 +2415,14 @@ pub enum ReservedWord {
     Table,
 
     /// # About
+    /// **Specification:** SQL 1999
+    Translate,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Trim,
+
+    /// # About
     /// **Specification:** SQL 1986
     To,
 
@@ -2417,6 +2438,10 @@ pub enum ReservedWord {
     /// # About
     /// **Specification:** SQL 1986
     Update,
+
+    /// # About
+    /// **Specification:** SQL 1999
+    Upper,
 
     /// # About
     /// **Specification:** SQL 1986
@@ -2575,8 +2600,12 @@ mod tests {
             panic!("<non-reserved word> {word} from SQL 2016 not found in [`NonReservedWord`] enum!");
         }
 
-        for word in enum_words.difference(&words) {
-            panic!("<non-reserved word> {word} found in [`NonReservedWord`] enum, but is not SQL 2016!");
+        let mut difference = enum_words.difference(&words).map(|word| *word).collect::<Vec<&str>>();
+        difference.sort();
+
+        if !difference.is_empty() {
+            panic!("<non-reserved word> {} found in [`NonReservedWord`] enum, but are not SQL 2016!",
+                difference.join(", "));
         }
     }
 }
