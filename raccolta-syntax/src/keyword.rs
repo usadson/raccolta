@@ -801,7 +801,7 @@ pub enum Keyword {
 /// SQL-1992.
 ///
 /// # About
-/// **Specification:** SQL 1992, SQL 1999
+/// **Specification:** SQL 1992, SQL 1999, SQL 2003, SQL 2016
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(AsRefStr, EnumIter, strum::Display)]
 #[non_exhaustive]
@@ -2095,4 +2095,413 @@ pub enum NonReservedWord {
     /// # About
     /// **Specification:** SQL 2003
     Zone,
+}
+
+/// Reserved words (`<reserved word>`) are words that are only allowed in
+/// context with semantic meaning. If you'd want to use these as column,
+/// database, schema, table, or view names, you have to escape the identifiers.
+///
+/// SQL-86 didn't have these `<reserved words>`, as they were introduced in
+/// SQL-1992. In SQL-86, they were simply known as `<key words>`.
+///
+/// # About
+/// **Specification:** SQL 86, SQL 1992, SQL 1999, SQL 2003, SQL 2016
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(AsRefStr, EnumIter, strum::Display)]
+#[non_exhaustive]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum ReservedWord {
+    /// # About
+    /// **Specification:** SQL 1986
+    All,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    And,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Any,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    As,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Asc,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Authorization,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Avg,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Begin,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Between,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    By,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Char,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Character,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Check,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Close,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Cobol,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Commit,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Continue,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Count,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Create,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Current,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Cursor,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Dec,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Decimal,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Declare,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Delete,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Desc,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Distinct,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Double,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    End,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Escape,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Exec,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Exists,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Fetch,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Float,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    For,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Fortran,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Found,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    From,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Go,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Goto,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Grant,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Group,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Having,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    In,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Indicator,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Insert,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Int,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Integer,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Into,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Is,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Language,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Like,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Max,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Min,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Module,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Not,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Null,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Numeric,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Of,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    On,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Open,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Option,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Or,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Order,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Pascal,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Pli,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Precision,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Privileges,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Procedure,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Public,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Real,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Rollback,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Schema,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Section,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Select,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Set,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Smallint,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Some,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Sql,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Sqlcode,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Sqlerror,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Sum,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Table,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    To,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Union,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Unique,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Update,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    User,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Values,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    View,
+
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Whenever,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Where,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    With,
+
+    /// # About
+    /// **Specification:** SQL 1986
+    Work,
 }
