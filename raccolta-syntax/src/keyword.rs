@@ -2560,21 +2560,23 @@ mod tests {
     /// [`NonReservedWords`] enum.
     #[test]
     fn non_reserved_words_sql_2016_ebnf() {
-        let words: HashSet<_> = SQL_2016_EBNF_NON_RESERVED_WORDS
+        let words: HashSet<&str> = SQL_2016_EBNF_NON_RESERVED_WORDS
             .split("|")
             .map(|word| word.trim())
             .collect();
 
-        let enum_words: Vec<_> = NonReservedWord::iter()
+        let enum_words: Vec<String> = NonReservedWord::iter()
             .map(|word| word.to_string())
             .collect();
 
-        for word in words.difference(&enum_words.iter().map(|word| word.as_ref()).collect()) {
-            if words.contains(word) {
-                panic!("<non-reserved word> {word} from SQL 2016 not found in [`NonReservedWord`] enum!");
-            } else {
-                panic!("<non-reserved word> {word} found in [`NonReservedWord`] enum, but is not SQL 2016!");
-            }
+        let enum_words: HashSet<&str> = enum_words.iter().map(|word| word.as_ref()).collect();
+
+        for word in words.difference(&enum_words) {
+            panic!("<non-reserved word> {word} from SQL 2016 not found in [`NonReservedWord`] enum!");
+        }
+
+        for word in enum_words.difference(&words) {
+            panic!("<non-reserved word> {word} found in [`NonReservedWord`] enum, but is not SQL 2016!");
         }
     }
 }
