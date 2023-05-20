@@ -42,6 +42,7 @@ use crate::{
             ContextuallyTypedRowValueConstructorElement,
         },
         row_value_expression::ContextuallyTypedRowValueExpression,
+        string_value_expression::StringValueExpression,
         TableExpression,
         table_reference::{
             TablePrimary,
@@ -1181,6 +1182,14 @@ impl Parser {
                 )
             ),
 
+            TokenKind::StringLiteral { first_character_byte_idx, last_character_byte_idx } => Ok(
+                ValueExpression::StringValueExpression(
+                    StringValueExpression::Literal(
+                        input[first_character_byte_idx..last_character_byte_idx].to_string()
+                    )
+                )
+            ),
+
             TokenKind::UnsignedInteger(integer) => Ok(
                 ValueExpression::Numeric(
                     NumericValueExpression::SimpleU64(integer)
@@ -1406,6 +1415,16 @@ mod tests {
             ],
         ]
     )]
+    #[case(
+        "INSERT INTO strings VALUES('hello', 'world');",
+        "strings",
+        vec![
+            vec![
+                value_expression_string_literal("hello"),
+                value_expression_string_literal("world"),
+            ]
+        ]
+    )]
     fn parser_simple_insert_into_statement(#[case] input: &str, #[case] table_name: &str, #[case] rows: Vec<Vec<ValueExpression>>) {
         let result = Parser::new().parse_statement(input);
 
@@ -1525,6 +1544,14 @@ mod tests {
     const fn value_expression_simple_u64(value: u64) -> ValueExpression {
         ValueExpression::Numeric(
             NumericValueExpression::SimpleU64(value)
+        )
+    }
+
+    fn value_expression_string_literal(value: impl Into<std::borrow::Cow<'static, str>>) -> ValueExpression {
+        ValueExpression::StringValueExpression(
+            StringValueExpression::Literal(
+                value.into().into_owned()
+            )
         )
     }
 

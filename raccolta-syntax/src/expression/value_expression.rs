@@ -5,7 +5,8 @@ use crate::set_function::SetFunctionSpecification;
 
 use super::{
     ColumnReference,
-    NumericValueExpression
+    NumericValueExpression,
+    string_value_expression::StringValueExpression,
 };
 
 /// ```text
@@ -28,4 +29,6 @@ pub enum ValueExpression {
     ColumnReference(ColumnReference),
 
     SetFunctionSpecification(SetFunctionSpecification),
+
+    StringValueExpression(StringValueExpression),
 }

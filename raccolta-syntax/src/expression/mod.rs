@@ -8,6 +8,7 @@ pub mod query_expression;
 pub mod query_specification;
 pub mod row_value_constructor;
 pub mod row_value_expression;
+pub mod string_value_expression;
 pub mod table_expression;
 pub mod table_reference;
 pub mod table_value_constructor;
