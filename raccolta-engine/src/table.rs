@@ -12,6 +12,7 @@ use raccolta_syntax::expression::{
     data_type::DataType,
     NumericValueExpression,
     row_value_constructor::ContextuallyTypedRowValueConstructorElement,
+    string_value_expression::StringValueExpression,
     ValueExpression,
 };
 
@@ -34,10 +35,23 @@ impl EngineColumn {
                                 vec.push(value as i32);
                                 Ok(())
                             }
+                            _ => todo!()
                         }
                     }
                 }
-                _ => todo!()
+                ValueExpression::StringValueExpression(string_expression) => match string_expression {
+                    StringValueExpression::Literal(mut literal) => {
+                        match &mut self.values {
+                            EngineColumnContainer::StringsVarying { maximum_length, values } => {
+                                literal.truncate(*maximum_length);
+                                values.push(literal);
+                                Ok(())
+                            }
+                            _ => todo!()
+                        }
+                    }
+                }
+                _ => todo!(),
             }
         }
     }
@@ -46,12 +60,18 @@ impl EngineColumn {
 #[derive(Debug)]
 pub enum EngineColumnContainer {
     Integers(Vec<i32>),
+
+    StringsVarying {
+        values: Vec<String>,
+        maximum_length: usize,
+    },
 }
 
 impl EngineColumnContainer {
     pub fn len(&self) -> usize {
         match self {
             Self::Integers(vec) => vec.len(),
+            Self::StringsVarying{ values, .. } => values.len(),
         }
     }
 }
@@ -108,6 +128,8 @@ impl EngineTableColumnIterator {
                     match &column.values {
                         EngineColumnContainer::Integers(vec) =>
                             EngineRowColumnValue::I32(vec[row_index]),
+                        EngineColumnContainer::StringsVarying { values, .. } =>
+                            EngineRowColumnValue::String(values[row_index].clone())
                     }
                 })
                 .collect()
@@ -141,6 +163,7 @@ impl Iterator for EngineTableColumnIterator {
                 .map(|column| {
                     match &column.values {
                         EngineColumnContainer::Integers(vec) => EngineRowColumnValue::I32(vec[idx]),
+                        EngineColumnContainer::StringsVarying { values, .. } => EngineRowColumnValue::String(values[idx].clone()),
                     }
                 })
                 .collect()

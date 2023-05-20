@@ -33,7 +33,7 @@ use raccolta_syntax::{
         data_type::{
             DataType,
             NumericType,
-            PredefinedType,
+            PredefinedType, CharacterStringType,
         },
         QueryExpression,
         QuerySpecification,
@@ -83,9 +83,20 @@ impl Engine {
     }
 
     fn create_value_container_for_column(&self, column: &ColumnDefinition) -> Option<EngineColumnContainer> {
-        match column.data_type {
+        match &column.data_type {
             DataType::Predefined(PredefinedType::Numeric(NumericType::Integer)) => {
                 Some(EngineColumnContainer::Integers(Vec::new()))
+            }
+            DataType::Predefined(PredefinedType::CharacterString { definition, character_set }) => {
+                match definition {
+                    CharacterStringType::Varying { length } => Some(
+                        EngineColumnContainer::StringsVarying {
+                            values: Vec::new(),
+                            maximum_length: *length
+                        }
+                    ),
+                    _ => None
+                }
             }
             _ => None
         }
@@ -310,6 +321,7 @@ pub struct EngineRow {
 #[non_exhaustive]
 pub enum EngineRowColumnValue {
     I32(i32),
+    String(String),
 }
 
 impl EngineRowColumnValue {
@@ -327,9 +339,18 @@ impl EngineRowColumnValue {
                         OrderingSpecification::Descending => ordering.reverse(),
                     }
                 }
-                // _ => std::cmp::Ordering::Equal,
+                _ => std::cmp::Ordering::Equal,
             }
-            // _ => std::cmp::Ordering::Equal,
+            Self::String(self_value) => match &other {
+                Self::String(other_value) => {
+                    let ordering = self_value.cmp(other_value);
+                    match ordering_specification {
+                        OrderingSpecification::Ascending => ordering,
+                        OrderingSpecification::Descending => ordering.reverse(),
+                    }
+                }
+                _ => std::cmp::Ordering::Equal,
+            }
         }
     }
 }
@@ -338,6 +359,7 @@ impl Display for EngineRowColumnValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
             Self::I32(i) => Display::fmt(&i, f),
+            Self::String(s) => Display::fmt(&s, f),
         }
     }
 }

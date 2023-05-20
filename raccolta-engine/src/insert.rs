@@ -3,7 +3,10 @@
 
 //! This module contains the logic for executing `INSERT INTO` statements.
 
-use std::sync::{RwLock, Arc};
+use std::sync::{
+    Arc,
+    RwLock,
+};
 
 use raccolta_syntax::expression::{
     data_type::{
@@ -19,8 +22,6 @@ use raccolta_syntax::expression::{
 };
 
 use crate::{table::EngineTable, EngineResult, EngineMessage};
-
-
 
 /// Executes the `INSERT INTO` statement, after the table was found to
 /// insert into.
@@ -74,6 +75,10 @@ fn is_column_value_trivially_convertible_to(column_value: &ContextuallyTypedRowV
                     DataType::Predefined(PredefinedType::Numeric(NumericType::Integer)) => true,
                     _ => false,
                 }
+            }
+            ValueExpression::StringValueExpression(..) => match data_type {
+                DataType::Predefined(PredefinedType::CharacterString { .. }) => true,
+                _ => false,
             }
             _ => todo!()
         }
