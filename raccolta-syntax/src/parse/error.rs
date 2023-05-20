@@ -454,4 +454,15 @@ pub enum StatementParseError<'input> {
         found: &'input str,
         token_kind: TokenKind,
     },
+
+    #[error("unexpected end-of-file: expected a `WHERE` clause")]
+    WhereClauseUnexpectedEndOfFile {
+        found: &'input str,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected a `WHERE` clause")]
+    WhereClauseUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
 }

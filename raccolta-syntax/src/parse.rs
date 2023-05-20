@@ -16,6 +16,7 @@ use crate::{
             OrderingSpecification,
             SortSpecification,
         },
+        WhereClause,
     },
     common::TableName,
     expression::{
@@ -170,6 +171,27 @@ impl Parser {
 
         *tokens = &tokens[1..];
         Ok(())
+    }
+
+    fn parse_clause_where<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<WhereClause, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::WhereClauseUnexpectedEndOfFile {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::Where) {
+            return Err(StatementParseError::WhereClauseUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        Ok(WhereClause {
+            search_condition: self.parse_value_expression(input, tokens)?
+        })
     }
 
     fn parse_column_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ColumnReference, StatementParseError<'input>> {
@@ -772,7 +794,7 @@ impl Parser {
     ///     [ <having clause> ]
     /// ```
     fn parse_statement_select_table_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableExpression, StatementParseError<'input>> {
-        let table_expression = TableExpression {
+        let mut table_expression = TableExpression {
             from_clause: self.parse_statement_select_table_expression_from_clause(input, tokens)?,
             group_by_clause: None,
             having_clause: None,
@@ -803,12 +825,9 @@ impl Parser {
             }
 
             if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Where) {
-                return Err(StatementParseError::UnsupportedFeature {
-                    feature_name: "WHERE clause",
-                    feature_description: "Filtering the SELECT statement columns",
-                    found: tokens[0].as_string(input),
-                    token_kind: tokens[0].kind(),
-                });
+                table_expression.where_clause = Some(
+                    self.parse_clause_where(input, tokens)?
+                );
             }
         }
 
