@@ -106,7 +106,7 @@ impl Parser {
 
         loop {
             if !sort_specification_list.is_empty() {
-                if tokens[0].kind() != TokenKind::Comma {
+                if is_end_of_statement(tokens) || tokens[0].kind() != TokenKind::Comma {
                     break;
                 }
 
