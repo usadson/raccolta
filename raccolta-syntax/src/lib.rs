@@ -52,17 +52,60 @@ impl<'a> Lexer<'a> {
         self.next_character();
 
         let kind = match first_character {
-            '*' => TokenKind::Asterisk,
-            ',' => TokenKind::Comma,
-            '=' => TokenKind::EqualsSign,
-            '.' => TokenKind::FullStop,
-            '>' => TokenKind::GreaterThanSign,
-            '(' => TokenKind::LeftParenthesis,
-            '<' => TokenKind::LessThanSign,
+            '!' => TokenKind::ExclamationMark,
+            '"' => todo!(),
+            '#' => todo!("invalid token"),
+            '$' => TokenKind::DollarSign,
             '%' => TokenKind::PercentageSign,
-            '+' => TokenKind::PlusSign,
+            '&' => TokenKind::Ampersand,
+            '\'' => loop {
+                let Some(next_character) = self.current_character() else {
+                    break TokenKind::IllegalToken;
+                };
+
+                if next_character == '\'' {
+                    let last_character_byte_idx = self.character_byte_idx;
+                    // This is a valid string, but the first character points to
+                    // ' token, which is incorrect.
+                    self.next_character();
+
+                    break TokenKind::StringLiteral {
+                        first_character_byte_idx: first_character_byte_idx + 1,
+                        last_character_byte_idx
+                    };
+                }
+
+                self.next_character();
+            }
+            '(' => TokenKind::LeftParenthesis,
             ')' => TokenKind::RightParenthesis,
+            '*' => TokenKind::Asterisk,
+            '+' => TokenKind::PlusSign,
+            ',' => TokenKind::Comma,
+            '-' => TokenKind::MinusSign,
+            '.' => TokenKind::FullStop,
+            '/' => TokenKind::Solidus,
+
+            '0'..='9' => {
+                let mut value = ((first_character as u8) - b'0') as u64;
+
+                while self.is_current_character_digit() {
+                    value *= 10;
+                    value += ((self.current_character().unwrap() as u8) - b'0') as u64;
+
+                    self.next_character();
+                }
+
+                TokenKind::UnsignedInteger(value)
+            }
+
+            ':' => TokenKind::Colon,
             ';' => TokenKind::Semicolon,
+            '<' => TokenKind::LessThanOperator,
+            '=' => TokenKind::EqualsSign,
+            '>' => TokenKind::GreaterThanOperator,
+            '?' => TokenKind::Question,
+            '@' => TokenKind::AtSign,
 
             'a'..='z' | 'A'..='Z' => {
                 while self.is_current_character_identifier_body_character() {
@@ -81,18 +124,16 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            '0'..='9' => {
-                let mut value = ((first_character as u8) - b'0') as u64;
-
-                while self.is_current_character_digit() {
-                    value *= 10;
-                    value += ((self.current_character().unwrap() as u8) - b'0') as u64;
-
-                    self.next_character();
-                }
-
-                TokenKind::UnsignedInteger(value)
-            }
+            '[' => todo!(),
+            '\\' => TokenKind::ReverseSolidus,
+            ']' => todo!(),
+            '^' => TokenKind::Circumflex,
+            '_' => todo!(),
+            '`' => todo!(),
+            '{' => TokenKind::LeftBrace,
+            '|' => TokenKind::VerticalBar,
+            '}' => TokenKind::RightBrace,
+            '~' => todo!(),
 
             _ => {
                 println!("Unexpected character: '{first_character}' dec={} hex=0x{:X}",
@@ -183,7 +224,7 @@ mod tests {
 
     #[test]
     fn lexer_simple_select_query() {
-        let input = "SELECT * FROM blog_posts;";
+        let input = "SELECT * FROM blog_posts WHERE title = 'Hello, World!';";
 
         let tokens: Vec<_> = Lexer::new(input)
             .collect();
@@ -197,7 +238,18 @@ mod tests {
 
             Token::new(14, 24, TokenKind::Identifier),
 
-            Token::new(24, 25, TokenKind::Semicolon),
+            Token::new(25, 30, TokenKind::ReservedWord(ReservedWord::Where)),
+
+            Token::new(31, 36, TokenKind::Identifier),
+
+            Token::new(37, 38, TokenKind::EqualsSign),
+
+            Token::new(39, 54, TokenKind::StringLiteral {
+                first_character_byte_idx: 40,
+                last_character_byte_idx: 53
+            }),
+
+            Token::new(54, 55, TokenKind::Semicolon),
         ]);
     }
 

@@ -50,37 +50,82 @@ impl Token {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(strum::Display)]
 pub enum TokenKind {
-    /// The '*' character.
+    /// The '&' token
+    Ampersand,
+
+    /// The '*' token
     Asterisk,
+
+    /// The '@' token
+    AtSign,
+
+    /// The '^' token
+    Circumflex,
+
+    /// The `:` token
+    Colon,
 
     /// The ',' character
     Comma,
 
+    /// The `||` token
+    ConcatenationOperator,
+
+    /// The `$` token
+    DollarSign,
+
+    /// The `::` token
+    DoubleColon,
+
+    /// The `..` token
+    DoublePeriod,
+
     /// The '=' character
     EqualsSign,
+
+    /// The `! token
+    ExclamationMark,
 
     /// The '.' character
     FullStop,
 
-    /// The '>' character.
-    GreaterThanSign,
+    /// The `<` token
+    GreaterThanOperator,
 
-    /// A [`NonReservedWord`].
-    NonReservedWord(NonReservedWord),
+    /// The `>=` token
+    GreaterThanOrEqualsOperator,
 
-    /// A [`ReservedWord`].
-    ReservedWord(ReservedWord),
+    Identifier,
 
-    /// An unsigned integer [`u64`].
-    UnsignedInteger(u64),
+    /// Illegal portion
+    IllegalToken,
+
+    /// The `{` token
+    LeftBrace,
+
+    /// The `{-` token
+    LeftBraceMinus,
 
     //// The '(' character.
     LeftParenthesis,
 
-    /// The '<' character.
-    LessThanSign,
+    /// The `<` token
+    LessThanOperator,
 
-    Identifier,
+    /// The `<=` token
+    LessThanOrEqualsOperator,
+
+    /// The `-` token
+    MinusSign,
+
+    /// The `=>` token
+    NamedArgumentAssignmentOperator,
+
+    /// A [`NonReservedWord`].
+    NonReservedWord(NonReservedWord),
+
+    /// The `<>` token
+    NotEqualsOperator,
 
     /// The '%' character.
     PercentageSign,
@@ -88,14 +133,44 @@ pub enum TokenKind {
     /// The '+' character.
     PlusSign,
 
+    /// The `?` token
+    Question,
+
+    /// A [`ReservedWord`].
+    ReservedWord(ReservedWord),
+
+    /// The `\` token
+    ReverseSolidus,
+
+    /// The `->` token
+    RightArrow,
+
+    /// The `}` token
+    RightBrace,
+
+    /// The `-}` token
+    RightMinusBrace,
+
     /// The ')' character.
     RightParenthesis,
 
     /// The ';' character.
     Semicolon,
 
+    /// The `/` token
+    Solidus,
+
     /// A string literal, e.g. 'Hello, world!'.
-    StringLiteral,
+    StringLiteral {
+        first_character_byte_idx: usize,
+        last_character_byte_idx: usize,
+    },
+
+    /// An unsigned integer [`u64`].
+    UnsignedInteger(u64),
+
+    /// The `|` token
+    VerticalBar,
 }
 
 impl TokenKind {
