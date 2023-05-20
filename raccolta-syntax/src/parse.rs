@@ -20,6 +20,7 @@ use crate::{
     },
     common::TableName,
     expression::{
+        BooleanExpression,
         ColumnReference,
         data_type::{
             DataType,
@@ -58,6 +59,13 @@ use crate::{
         ReservedWord,
     },
     Lexer,
+    predicate::{
+        comparison_predicate::{
+            ComparisonPredicate,
+            ComparisonOperator
+        },
+        Predicate,
+    },
     schema::definition::table_definition::{
         ColumnDefinition,
         TableDefinition,
@@ -1181,7 +1189,7 @@ impl Parser {
         let first_token = tokens[0];
         *tokens = &tokens[1..];
 
-        match first_token.kind() {
+        let mut value_expression = match first_token.kind() {
             // ```text
             // <identifier chain> ::=
             //     <identifier> [ { <period> <identifier> }... ]
@@ -1191,35 +1199,121 @@ impl Parser {
             // ```
             TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
                 *tokens = original_tokens;
-                self.parse_column_reference(input, tokens)
-                    .map(|reference| ValueExpression::ColumnReference(reference))
+                ValueExpression::ColumnReference(
+                    self.parse_column_reference(input, tokens)?
+                )
             }
 
-            TokenKind::ReservedWord(ReservedWord::Count) => Ok(
-                ValueExpression::SetFunctionSpecification(
-                    self.parse_set_function_specification_count(input, tokens)?
-                )
+            TokenKind::ReservedWord(ReservedWord::Count) => ValueExpression::SetFunctionSpecification(
+                self.parse_set_function_specification_count(input, tokens)?
             ),
 
-            TokenKind::StringLiteral { first_character_byte_idx, last_character_byte_idx } => Ok(
+            TokenKind::StringLiteral { first_character_byte_idx, last_character_byte_idx } => {
                 ValueExpression::StringValueExpression(
                     StringValueExpression::Literal(
                         input[first_character_byte_idx..last_character_byte_idx].to_string()
                     )
                 )
+            },
+
+            TokenKind::UnsignedInteger(integer) => ValueExpression::Numeric(
+                NumericValueExpression::SimpleU64(integer)
             ),
 
-            TokenKind::UnsignedInteger(integer) => Ok(
-                ValueExpression::Numeric(
-                    NumericValueExpression::SimpleU64(integer)
-                )
-            ),
-
-            _ => Err(StatementParseError::ValueExpressionUnexpectedToken {
+            _ => return Err(StatementParseError::ValueExpressionUnexpectedToken {
                 found: first_token.as_string(input),
                 token_kind: first_token.kind(),
             })
+        };
+
+        while !is_end_of_statement(tokens) {
+            match tokens[0].kind() {
+                TokenKind::EqualsSign => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::EqualTo
+                    )?;
+                }
+
+                TokenKind::GreaterThanOperator => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::GreaterThan
+                    )?;
+                }
+
+                TokenKind::GreaterThanOrEqualsOperator => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::GreaterThanOrEqualTo
+                    )?;
+                }
+
+                TokenKind::LessThanOperator => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::LessThan
+                    )?;
+                }
+
+                TokenKind::LessThanOrEqualsOperator => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::LessThanOrEqualTo
+                    )?;
+                }
+
+                TokenKind::NotEqualsOperator => {
+                    *tokens = &tokens[1..];
+                    value_expression = self.parse_value_expression_continuation_comparison_predicate(
+                        input,
+                        tokens,
+                        value_expression,
+                        ComparisonOperator::NotEqualTo
+                    )?;
+                }
+
+                _ => break,
+            }
         }
+
+        Ok(value_expression)
+    }
+
+    /// A continuation of `parse_value_expression` when an comparison operator
+    /// is consumed.
+    fn parse_value_expression_continuation_comparison_predicate<'input>(
+        &self,
+        input: &'input str,
+        tokens: &mut &[Token],
+        left_hand_side: ValueExpression,
+        operator: ComparisonOperator
+    ) -> Result<ValueExpression, StatementParseError<'input>> {
+        let right_hand_side = self.parse_value_expression(input, tokens)?;
+        Ok(ValueExpression::Boolean(
+            BooleanExpression::Predicate(Box::new(
+                Predicate::Comparison(ComparisonPredicate{
+                    left_hand_side,
+                    right_hand_side,
+                    operator
+                })
+            ))
+        ))
     }
 }
 

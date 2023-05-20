@@ -4,6 +4,7 @@
 use crate::set_function::SetFunctionSpecification;
 
 use super::{
+    BooleanExpression,
     ColumnReference,
     NumericValueExpression,
     string_value_expression::StringValueExpression,
@@ -23,10 +24,12 @@ use super::{
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValueExpression {
-    /// `<numeric value expression>`
-    Numeric(NumericValueExpression),
+    Boolean(BooleanExpression),
 
     ColumnReference(ColumnReference),
+
+    /// `<numeric value expression>`
+    Numeric(NumericValueExpression),
 
     SetFunctionSpecification(SetFunctionSpecification),
 

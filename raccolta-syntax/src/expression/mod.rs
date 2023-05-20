@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+pub mod boolean_expression;
 pub mod column_reference;
 pub mod data_type;
 pub mod numeric_value_expression;
@@ -14,6 +15,7 @@ pub mod table_reference;
 pub mod table_value_constructor;
 pub mod value_expression;
 
+pub use boolean_expression::BooleanExpression;
 pub use column_reference::ColumnReference;
 pub use query_specification::QuerySpecification;
 pub use query_expression::QueryExpression;

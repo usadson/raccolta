@@ -6,6 +6,7 @@ pub mod common;
 pub mod expression;
 pub mod keyword;
 pub mod parse;
+pub mod predicate;
 pub mod schema;
 pub mod set_function;
 pub mod statement;
