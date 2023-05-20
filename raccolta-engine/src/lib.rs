@@ -242,6 +242,20 @@ impl Engine {
             EngineMessage::Help("You can create an issue at: https://github.com/usadson/raccolta/issues/new?template=bug_report.md".into()),
         ])
     }
+
+    /// Get the names of all tables.
+    pub fn get_table_names(&self) -> Vec<Arc<str>> {
+        self.tables.values()
+            .map(|table| {
+                if let Ok(table) = table.read() {
+                    Some(Arc::clone(&table.name))
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
