@@ -8,12 +8,28 @@ use std::{
 
 use raccolta_engine::Engine;
 use raccolta_syntax::{
+    expression::{
+        ColumnReference,
+        query_expression::{
+            QueryExpressionBody,
+            SimpleTable,
+        },
+        query_specification::{
+            SelectList,
+            SelectSublist
+        },
+    },
     keyword::{
         NonReservedWord,
         ReservedWord,
     },
     Lexer,
-    TokenKind, Token,
+    statement::{
+        SqlDataStatement,
+        SqlExecutableStatement,
+    },
+    Token,
+    TokenKind,
 };
 use strum::IntoEnumIterator;
 
@@ -48,19 +64,77 @@ impl AutoCompleter {
                 .collect();
         }
 
-        if tokens.len() > 2
-            && tokens[tokens.len() - 2].kind() == TokenKind::ReservedWord(ReservedWord::From)
-            && tokens.last().unwrap().kind() == TokenKind::Identifier {
-                return filter_strings(
-                    self.engine.borrow()
-                        .get_table_names()
-                        .into_iter()
-                        .map(|name| name.to_string()),
-                    tokens.last().unwrap().as_string(input)
-                );
+        if let Some(suggestions) = self.complete_select_order_by(input, tokens) {
+            return suggestions;
+        }
+
+        if tokens.len() > 2 {
+            let identifier = tokens.last().unwrap().as_string(input);
+
+            if let TokenKind::ReservedWord(reserved_word) = tokens[tokens.len() - 2].kind() {
+                match reserved_word {
+                    ReservedWord::By => {
+                        if tokens.len() > 3 && tokens[tokens.len() - 3].kind() == TokenKind::ReservedWord(ReservedWord::Order) {
+                            let order_token = tokens[tokens.len() - 3];
+
+                            let statement = raccolta_syntax::Parser::new()
+                                .parse_statement(&input[0..order_token.first_character_byte_idx]);
+                            match statement {
+                                Ok(statement) => return self.suggest_column_names(statement, identifier),
+                                Err(_) => (),
+                            }
+                        }
+                    }
+
+                    ReservedWord::From => {
+                        return filter_strings(
+                            self.engine.borrow()
+                                .get_table_names()
+                                .into_iter()
+                                .map(|name| name.to_string()),
+                            identifier
+                        );
+                    }
+
+                    ReservedWord::Order => {
+                        return filter_strings(["BY".into()].into_iter(), identifier);
+                    }
+
+                    _ => ()
+                }
             }
+        }
 
         Vec::new()
+    }
+
+    /// Complete the `ORDER BY` clause of the `SELECT` statement.
+    fn complete_select_order_by(&self, input: &str, tokens: &[Token]) -> Option<Vec<String>> {
+        // `ORDER` can only be followed by `BY` in `SELECT` statements.
+        // There is `ORDER FULL BY`, but this is not applicable to statements.
+        if tokens.last().map(|token|token.kind()) == Some(TokenKind::ReservedWord(ReservedWord::Order)) {
+            return Some(vec!["BY".into()]);
+        }
+
+        let last_token = tokens.last().to_owned();
+        let second_last_token = tokens.iter().nth_back(1).to_owned();
+
+        let last_token_reserved_word = last_token.map(|token| token.as_reserved_word()).flatten();
+        let second_last_token_reserved_word = second_last_token.map(|token| token.as_reserved_word()).flatten();
+
+        if second_last_token_reserved_word == Some(ReservedWord::Order)
+                && last_token_reserved_word == Some(ReservedWord::By)
+                && input.chars().last().unwrap().is_whitespace() {
+            let result = raccolta_syntax::Parser::new()
+                .parse_statement(&input[0..second_last_token.unwrap().first_character_byte_idx]);
+            if let Ok(statement) = result {
+                if let Some(column_names) = self.get_column_names(statement) {
+                    return Some(column_names.collect());
+                }
+            }
+        }
+
+        None
     }
 
     /// Get the tokens that can occur at the start of the statement.
@@ -78,6 +152,41 @@ impl AutoCompleter {
             "UPDATE".into(),
             "WITH".into(),
         ]
+    }
+
+    fn get_column_names(&self, statement: SqlExecutableStatement) -> Option<Box<dyn Iterator<Item = String>>> {
+        if let SqlExecutableStatement::SqlDataStatement(SqlDataStatement::SelectStatement(query_expression)) = statement {
+            if let QueryExpressionBody::SimpleTable(SimpleTable::QuerySpecification(query_specification)) = query_expression.body {
+                if let SelectList::Sublist(sublist) = query_specification.select_list {
+                    let iterator = sublist
+                        .into_iter()
+                        .map(|sublist| {
+                            match sublist {
+                                SelectSublist::DerivedColumn(column) => match column.value_expression {
+                                    raccolta_syntax::expression::ValueExpression::ColumnReference(column) => {
+                                        match column {
+                                            ColumnReference::BasicIdentifierChain(chain) => Some(chain.join(".")),
+                                            _ => None,
+                                        }
+                                    }
+                                    _ => None,
+                                }
+                            }
+                        })
+                        .flatten();
+                    return Some(Box::new(iterator));
+                }
+            }
+        }
+
+        None
+    }
+
+    fn suggest_column_names(&self, statement: SqlExecutableStatement, identifier: &str) -> Vec<String> {
+        match self.get_column_names(statement) {
+            Some(iterator) => filter_strings(iterator, identifier),
+            None => Vec::new()
+        }
     }
 }
 

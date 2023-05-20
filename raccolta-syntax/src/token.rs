@@ -19,6 +19,22 @@ impl Token {
         Self { first_character_byte_idx, last_character_byte_idx, kind }
     }
 
+    pub fn as_non_reserved_word(&self) -> Option<NonReservedWord> {
+        if let TokenKind::NonReservedWord(word) = self.kind {
+            Some(word)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_reserved_word(&self) -> Option<ReservedWord> {
+        if let TokenKind::ReservedWord(word) = self.kind {
+            Some(word)
+        } else {
+            None
+        }
+    }
+
     /// Returns the string representation as provided by the `input`.
     pub fn as_string<'a>(&self, input: &'a str) -> &'a str {
         &input[self.first_character_byte_idx..self.last_character_byte_idx]
