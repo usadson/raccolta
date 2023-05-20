@@ -123,6 +123,47 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
+    #[error("unexpected end-of-file: expected `(` after `VARCHAR`")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR( <maximum length> )`"))]
+    DataTypeVarcharUnexpectedEndOfFileExpectedLeftParen {
+        found: &'input str,
+    },
+
+    #[error("unexpected token-end-of-file: expected a number indicating the maximum length of `VARCHAR`")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR( <maximum length> )`"))]
+    DataTypeVarcharUnexpectedEndOfFileExpectedLength {
+        found: &'input str,
+    },
+
+    #[error("unexpected end-of-file: expected closing parenthesis `)`")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR({length})`"))]
+    DataTypeVarcharUnexpectedEndOfFileExpectedRightParen {
+        found: &'input str,
+        length: usize,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `(` after `VARCHAR`")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR( <maximum length> )`"))]
+    DataTypeVarcharUnexpectedTokenExpectedLeftParen {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected a number indicating the maximum length")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR( <maximum length> )`"))]
+    DataTypeVarcharUnexpectedTokenExpectedLength {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `)` after `VARCHAR({length}`")]
+    #[strum(props(Help="Complete the VARCHAR data type: `VARCHAR({length})`"))]
+    DataTypeVarcharUnexpectedTokenExpectedRightParen {
+        found: &'input str,
+        token_kind: TokenKind,
+        length: usize,
+    },
+
     #[error("empty input provided for statement")]
     EmptyInput,
 

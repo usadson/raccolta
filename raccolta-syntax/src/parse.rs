@@ -9,13 +9,21 @@ pub use error::StatementParseError;
 use std::debug_assert;
 
 use crate::{
-    clause::{FromClause, order_by_clause::{OrderByClause, SortSpecification, OrderingSpecification}},
+    clause::{
+        FromClause,
+        order_by_clause::{
+            OrderByClause,
+            OrderingSpecification,
+            SortSpecification,
+        },
+    },
     common::TableName,
     expression::{
+        ColumnReference,
         data_type::{
             DataType,
             NumericType,
-            PredefinedType,
+            PredefinedType, CharacterStringType,
         },
         NumericValueExpression,
         query_specification::{
@@ -29,7 +37,10 @@ use crate::{
             QueryExpressionBody,
             SimpleTable,
         },
-        row_value_constructor::{ContextuallyTypedRowValueConstructor, ContextuallyTypedRowValueConstructorElement},
+        row_value_constructor::{
+            ContextuallyTypedRowValueConstructor,
+            ContextuallyTypedRowValueConstructorElement,
+        },
         row_value_expression::ContextuallyTypedRowValueExpression,
         TableExpression,
         table_reference::{
@@ -38,7 +49,7 @@ use crate::{
             TableReference,
         },
         table_value_constructor::ContextuallyTypedTableValueConstructor,
-        ValueExpression, ColumnReference,
+        ValueExpression,
     },
     keyword::{
         NonReservedWord,
@@ -332,6 +343,86 @@ impl Parser {
                 token_kind: tokens[0].kind()
             })
         }
+    }
+
+    /// Parse the `<data type>` when the token **`VARCHAR`** was consumed.
+    fn parse_data_type_varchar<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<DataType, StatementParseError<'input>> {
+        self.parse_data_type_varchar_left_paren(input, tokens)?;
+        let length = self.parse_data_type_varchar_length(input, tokens)?;
+        self.parse_data_type_varchar_right_paren(input, tokens, length)?;
+
+        Ok(DataType::Predefined(PredefinedType::CharacterString {
+            definition: CharacterStringType::Varying { length },
+            character_set: None
+        }))
+    }
+
+    /// Parse the left parenthesis `(` of a `VARCHAR` data type.
+    fn parse_data_type_varchar_left_paren<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedLeftParen {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::LeftParenthesis {
+            return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedLeftParen {
+                found: input.slice_empty_end(),
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        *tokens = &tokens[1..];
+        Ok(())
+    }
+
+    /// Parse the length of the `VARCHAR` data type.
+    fn parse_data_type_varchar_length<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<usize, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedLength {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        let length: usize;
+
+        match tokens[0].kind() {
+            TokenKind::UnsignedInteger(integer) => length = integer as _,
+            _ => return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedLength {
+                found: input.slice_empty_end(),
+                token_kind: tokens[0].kind(),
+            })
+        }
+
+        *tokens = &tokens[1..];
+
+        Ok(length)
+    }
+
+    /// Parse the right parenthesis `)` of a `VARCHAR` data type.
+    fn parse_data_type_varchar_right_paren<'input>(
+        &self,
+        input: &'input str,
+        tokens: &mut &[Token],
+        length: usize,
+    ) -> Result<(), StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedRightParen {
+                found: input.slice_empty_end(),
+                length
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::RightParenthesis {
+            return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedRightParen {
+                found: input.slice_empty_end(),
+                token_kind: tokens[0].kind(),
+                length
+            });
+        }
+
+        *tokens = &tokens[1..];
+        Ok(())
     }
 
     /// Parse the `<insert columns and source>` section.
@@ -921,6 +1012,7 @@ impl Parser {
             ReservedWord::Int | ReservedWord::Integer => DataType::Predefined(
                 PredefinedType::Numeric(NumericType::Integer)
             ),
+            ReservedWord::Varchar => self.parse_data_type_varchar(input, &mut tokens)?,
             _ => return Err(StatementParseError::TableElementSingleUnknownDataTypeKeyword {
                 found: data_type_reserved_word_token.as_string(input),
                 reserved_word: data_type_reserved_word,
@@ -1129,6 +1221,7 @@ mod tests {
 
     #[rstest]
     #[case("CREATE TABLE blog_posts (my_id INT)")]
+    #[case("CREATE TABLE blog_posts (title VARCHAR(50), text VARCHAR(500))")]
     fn parser_simple_create_table_statement(#[case] input: &str) {
         let parser = Parser::new();
 
