@@ -375,12 +375,12 @@ impl Parser {
         match tokens[0].kind() {
             TokenKind::NonReservedWord(NonReservedWord::Asc) => {
                 *tokens = &tokens[1..];
-                Some(OrderingSpecification::Asceding)
+                Some(OrderingSpecification::Ascending)
             }
 
             TokenKind::NonReservedWord(NonReservedWord::Desc) => {
                 *tokens = &tokens[1..];
-                Some(OrderingSpecification::Desceding)
+                Some(OrderingSpecification::Descending)
             }
 
             _ => None,
@@ -1865,7 +1865,7 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["number".into()]),
-                ordering_specification: Some(OrderingSpecification::Asceding),
+                ordering_specification: Some(OrderingSpecification::Ascending),
             }
         ]
     )]
@@ -1876,7 +1876,7 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["number".into()]),
-                ordering_specification: Some(OrderingSpecification::Desceding),
+                ordering_specification: Some(OrderingSpecification::Descending),
             }
         ]
     )]
@@ -1928,11 +1928,11 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
-                ordering_specification: Some(OrderingSpecification::Asceding),
+                ordering_specification: Some(OrderingSpecification::Ascending),
             },
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
-                ordering_specification: Some(OrderingSpecification::Asceding),
+                ordering_specification: Some(OrderingSpecification::Ascending),
             }
         ]
     )]
@@ -1956,11 +1956,11 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
-                ordering_specification: Some(OrderingSpecification::Desceding),
+                ordering_specification: Some(OrderingSpecification::Descending),
             },
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
-                ordering_specification: Some(OrderingSpecification::Desceding),
+                ordering_specification: Some(OrderingSpecification::Descending),
             }
         ]
     )]
@@ -1984,11 +1984,11 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
-                ordering_specification: Some(OrderingSpecification::Asceding),
+                ordering_specification: Some(OrderingSpecification::Ascending),
             },
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
-                ordering_specification: Some(OrderingSpecification::Desceding),
+                ordering_specification: Some(OrderingSpecification::Descending),
             }
         ]
     )]
@@ -2012,11 +2012,11 @@ mod tests {
         &[
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
-                ordering_specification: Some(OrderingSpecification::Desceding),
+                ordering_specification: Some(OrderingSpecification::Descending),
             },
             SortSpecification {
                 sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
-                ordering_specification: Some(OrderingSpecification::Asceding),
+                ordering_specification: Some(OrderingSpecification::Ascending),
             }
         ]
     )]

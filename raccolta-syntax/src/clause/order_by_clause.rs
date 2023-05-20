@@ -9,10 +9,10 @@ use crate::expression::ColumnReference;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OrderingSpecification {
     /// Sort from lowest to highest.
-    Asceding,
+    Ascending,
 
     /// Sort from highest to lowest.
-    Desceding,
+    Descending,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
