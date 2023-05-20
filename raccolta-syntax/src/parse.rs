@@ -3,6 +3,8 @@
 
 mod extensions;
 
+use std::debug_assert;
+
 use strum::{
     AsRefStr,
     EnumProperty,
@@ -10,7 +12,7 @@ use strum::{
 use thiserror::Error;
 
 use crate::{
-    clause::FromClause,
+    clause::{FromClause, order_by_clause::{OrderByClause, SortSpecification, OrderingSpecification}},
     common::TableName,
     expression::{
         data_type::{
@@ -93,6 +95,98 @@ impl Parser {
         Self {
             // ...
         }
+    }
+
+    /// Parses the **`ORDER BY`** statement.
+    fn parse_clause_order_by<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<OrderByClause, StatementParseError<'input>> {
+        self.parse_clause_order_by_reserved_word_order(input, tokens)?;
+        self.parse_clause_order_by_reserved_word_by(input, tokens)?;
+
+        let mut sort_specification_list = Vec::new();
+
+        loop {
+            if !sort_specification_list.is_empty() {
+                if tokens[0].kind() != TokenKind::Comma {
+                    break;
+                }
+
+                *tokens = &tokens[1..];
+            }
+
+            sort_specification_list.push(SortSpecification {
+                sort_key: self.parse_column_reference(input, tokens)?,
+                ordering_specification: self.parse_sort_specification_optional(tokens),
+            });
+        }
+
+        debug_assert!(!sort_specification_list.is_empty());
+        Ok(OrderByClause {
+            sort_specification_list
+        })
+    }
+
+    /// Parses the `BY` reserved word in a `ORDER BY` clause.
+    fn parse_clause_order_by_reserved_word_by<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::OrderByClauseUnexpectedEndOfFileExpectedBy {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::By) {
+            return Err(StatementParseError::OrderByClauseUnexpectedTokenExpectedBy {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        *tokens = &tokens[1..];
+        Ok(())
+    }
+
+    /// Parses the `ORDER` reserved word in a `ORDER BY` clause.
+    fn parse_clause_order_by_reserved_word_order<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::OrderByClauseUnexpectedEndOfFileExpectedBy {
+                found: input.slice_empty_end(),
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::Order) {
+            return Err(StatementParseError::OrderByClauseUnexpectedTokenExpectedBy {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        *tokens = &tokens[1..];
+        Ok(())
+    }
+
+    fn parse_column_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ColumnReference, StatementParseError<'input>> {
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::ColumnReferenceUnexpectedEndOfFile {
+                found: input.slice_empty_end()
+            });
+        }
+
+        if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(_)) {
+            return Err(StatementParseError::ColumnReferenceUnexpectedToken {
+                found: tokens[0].as_string(input),
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        let mut identifier_chain = vec![tokens[0].as_string(input).to_owned()];
+
+        while tokens.len() >= 2 && tokens[0].kind() == TokenKind::FullStop {
+            if matches!(tokens[1].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
+                identifier_chain.push(tokens[1].as_string(input).to_owned());
+            }
+            *tokens = &tokens[2..];
+        }
+
+        Ok(ColumnReference::BasicIdentifierChain(identifier_chain))
     }
 
     /// ```text
@@ -269,6 +363,26 @@ impl Parser {
                 found: tokens[0].as_string(input),
                 token_kind: tokens[0].kind(),
             }),
+        }
+    }
+
+    fn parse_sort_specification_optional(&self, tokens: &mut &[Token]) -> Option<OrderingSpecification> {
+        if is_end_of_statement(tokens) {
+            return None;
+        }
+
+        match tokens[0].kind() {
+            TokenKind::NonReservedWord(NonReservedWord::Asc) => {
+                *tokens = &tokens[1..];
+                Some(OrderingSpecification::Asceding)
+            }
+
+            TokenKind::NonReservedWord(NonReservedWord::Desc) => {
+                *tokens = &tokens[1..];
+                Some(OrderingSpecification::Desceding)
+            }
+
+            _ => None,
         }
     }
 
@@ -531,11 +645,17 @@ impl Parser {
             )?);
         }
 
+        let mut order_by = None;
+
         if !is_end_of_statement(tokens) {
-            return Err(StatementParseError::SelectStatementUnexpectedToken{
-                found: tokens[0].as_string(input),
-                token_kind: tokens[0].kind(),
-            })
+            if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Order) {
+                order_by = Some(self.parse_clause_order_by(input, &mut tokens)?);
+            } else {
+                return Err(StatementParseError::SelectStatementUnexpectedToken{
+                    found: tokens[0].as_string(input),
+                    token_kind: tokens[0].kind(),
+                });
+            }
         }
 
         // TODO this sucks. Can't we take a shortcut without code duplication?
@@ -546,7 +666,8 @@ impl Parser {
                         SimpleTable::QuerySpecification(
                             query_specification
                         )
-                    )
+                    ),
+                    order_by,
                 }
             )
         ))
@@ -945,6 +1066,8 @@ impl Parser {
             });
         }
 
+        let original_tokens = *tokens;
+
         let first_token = tokens[0];
         *tokens = &tokens[1..];
 
@@ -957,14 +1080,9 @@ impl Parser {
             //     <identifier chain>
             // ```
             TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
-                let mut identifier_chain = vec![first_token.as_string(input).to_owned()];
-                while tokens.len() >= 2 && tokens[0].kind() == TokenKind::FullStop {
-                    if matches!(tokens[1].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
-                        identifier_chain.push(tokens[1].as_string(input).to_owned());
-                    }
-                    *tokens = &tokens[2..];
-                }
-                Ok(ValueExpression::ColumnReference(ColumnReference::BasicIdentifierChain(identifier_chain)))
+                *tokens = original_tokens;
+                self.parse_column_reference(input, tokens)
+                    .map(|reference| ValueExpression::ColumnReference(reference))
             }
 
             TokenKind::ReservedWord(ReservedWord::Count) => Ok(
@@ -1000,6 +1118,17 @@ impl Parser {
 /// ```
 #[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty, AsRefStr, enum_fields::EnumFields)]
 pub enum StatementParseError<'input> {
+    #[error("unexpected end-of-file: expected column reference")]
+    ColumnReferenceUnexpectedEndOfFile {
+        found: &'input str,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected identifier as column reference")]
+    ColumnReferenceUnexpectedToken {
+        found: &'input str,
+        token_kind: TokenKind,
+    },
+
     #[error("unexpected end-of-file: expected `(` to start contextually typed row value constructor")]
     #[strum(props(Hint="Did you forget to add a row value constructor, or mistyped the last comma `,`?"))]
     ContextuallyTypedRowValueConstructorUnexpectedEndOfFile {
@@ -1173,6 +1302,28 @@ pub enum StatementParseError<'input> {
     InsertIntoStatementUnexpectedTrailingToken {
         found: &'input str,
         token_kind: TokenKind,
+    },
+
+    #[error("unexpected end-of-file after `ORDER`, expected `BY`")]
+    OrderByClauseUnexpectedEndOfFileExpectedBy {
+        found: &'input str,
+    },
+
+    #[error("unexpected end-of-file, expected `ORDER`")]
+    OrderByClauseUnexpectedEndOfFileExpectedOrder {
+        found: &'input str,
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `BY` after `ORDER`")]
+    OrderByClauseUnexpectedTokenExpectedBy {
+        found: &'input str,
+        token_kind: TokenKind
+    },
+
+    #[error("unexpected token: {token_kind} (`{found}`), expected `ORDER`")]
+    OrderByClauseUnexpectedTokenExpectedOrder {
+        found: &'input str,
+        token_kind: TokenKind
     },
 
     #[error("unexpected token {token_kind}: `{found}`")]
@@ -1409,7 +1560,8 @@ mod tests {
                                 table_expression: None,
                             }
                         )
-                    )
+                    ),
+                    order_by: None,
                 }
             )
         );
@@ -1455,7 +1607,8 @@ mod tests {
                                 table_expression: None,
                             }
                         )
-                    )
+                    ),
+                    order_by: None,
                 }
             )
         );
@@ -1488,7 +1641,8 @@ mod tests {
                                 table_expression: None,
                             }
                         )
-                    )
+                    ),
+                    order_by: None,
                 }
             )
         );
@@ -1651,7 +1805,8 @@ mod tests {
         let expected = SqlExecutableStatement::SqlDataStatement(
             SqlDataStatement::SelectStatement(
                 QueryExpression {
-                    body
+                    body,
+                    order_by: None,
                 }
             )
         );

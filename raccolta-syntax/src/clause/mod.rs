@@ -4,6 +4,7 @@
 mod from_clause;
 mod group_by_clause;
 mod having_clause;
+pub mod order_by_clause;
 mod where_clause;
 
 pub use from_clause::FromClause;

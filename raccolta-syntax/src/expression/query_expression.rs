@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+use crate::clause::order_by_clause::OrderByClause;
+
 use super::QuerySpecification;
 
 /// ```text
@@ -46,6 +48,9 @@ pub enum NonJoinQueryTerm {
 #[derive(Clone, Debug, PartialEq)]
 pub struct QueryExpression {
     pub body: QueryExpressionBody,
+
+    /// An optional **`ORDER BY`** clause.
+    pub order_by: Option<OrderByClause>,
 }
 
 /// ```text
