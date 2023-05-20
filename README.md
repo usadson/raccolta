@@ -1,6 +1,25 @@
 # Raccolta
 A database engine & library.
 
+## Getting Started
+You can get started by invoking the shell by running `cargo run`. This will open up a shell wherein you can type statements. The shell will try to provide suggestions when typing, to make the usage simpler.
+
+Keep in mind that not all syntax can be parsed, and not all parsed syntax can be executed at the moment.
+
+## Design
+This repository is split up into multiple crates:
+
+1. [`raccolta-engine`](raccolta-engine/) is the RDBMS (Relation Database Management System), which executes statements and manages the tables
+2. [`raccolta-shell`](raccolta-shell/) is a shell for the engine, wherein statements can be executed and errors are highlighted.
+3. [`raccolta-syntax`](raccolta-syntax/) is the lexer and parser of SQL, which parses statements, clauses, specifications, and expressions.
+
+The typical workflow of the RDBMS is the following:
+1. The `shell` starts up, which waits for statements to be fed into.
+2. The `shell` forwards these statements to `racccolta-syntax`, which parses them.
+3. When an error occurs, `shell` logically displays this error, accompanied by providing help and hints leveraged by the [`StatementParseError`s](raccolta-syntax/src/parse.rs) system of `raccolta-syntax`.
+4. When no error occurs, the statement is forwarded to `raccolta-engine`, which validates the statement of correct references and data types, and executes the statement.
+5. `shell` displays the messages received from `raccolta-engine` and displays the resulting table.
+
 ## Goals
 This section describes goals for the library and application, including the things I want to define out-of-scope.
 
