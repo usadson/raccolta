@@ -6,6 +6,7 @@
 
 mod insert;
 mod select;
+mod sorting;
 mod table;
 
 use std::{
@@ -24,6 +25,10 @@ use std::{
 use unicase::UniCase;
 
 use raccolta_syntax::{
+    clause::order_by_clause::{
+        OrderByClause,
+        OrderingSpecification,
+    },
     expression::{
         data_type::{
             DataType,
@@ -204,7 +209,7 @@ impl Engine {
             raccolta_syntax::expression::query_expression::QueryExpressionBody::SimpleTable(simple_table) => {
                 match simple_table {
                     raccolta_syntax::expression::query_expression::SimpleTable::QuerySpecification(query_specification) => {
-                        self.execute_statement_select_simple_table_query_specification(query_specification)
+                        self.execute_statement_select_simple_table_query_specification(query_specification, statement.order_by)
                     }
                 }
             }
@@ -212,7 +217,11 @@ impl Engine {
         }
     }
 
-    fn execute_statement_select_simple_table_query_specification(&self, query_specification: QuerySpecification) -> EngineResult {
+    fn execute_statement_select_simple_table_query_specification(
+        &self,
+        query_specification: QuerySpecification,
+        order_by_clause: Option<OrderByClause>
+    ) -> EngineResult {
         let Some(table_expression) = &query_specification.table_expression else {
             return self.execute_unsupported_statement();
         };
@@ -233,7 +242,7 @@ impl Engine {
             ]);
         };
 
-        select::execute(query_specification, table_ref.clone())
+        select::execute(query_specification, table_ref.clone(), order_by_clause)
     }
 
     /// Returns a message describing that this statement is not yet supported
@@ -298,8 +307,31 @@ pub struct EngineRow {
 
 /// The value of a column in a result row.
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum EngineRowColumnValue {
     I32(i32),
+}
+
+impl EngineRowColumnValue {
+    fn compare_ordering(
+        &self,
+        other: &EngineRowColumnValue,
+        ordering_specification: OrderingSpecification
+    ) -> std::cmp::Ordering {
+        match &self {
+            Self::I32(self_value) => match &other {
+                Self::I32(other_value) => {
+                    let ordering = self_value.cmp(other_value);
+                    match ordering_specification {
+                        OrderingSpecification::Ascending => ordering,
+                        OrderingSpecification::Descending => ordering.reverse(),
+                    }
+                }
+                // _ => std::cmp::Ordering::Equal,
+            }
+            // _ => std::cmp::Ordering::Equal,
+        }
+    }
 }
 
 impl Display for EngineRowColumnValue {
