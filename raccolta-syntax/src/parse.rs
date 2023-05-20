@@ -178,6 +178,7 @@ impl Parser {
         }
 
         let mut identifier_chain = vec![tokens[0].as_string(input).to_owned()];
+        *tokens = &tokens[1..];
 
         while tokens.len() >= 2 && tokens[0].kind() == TokenKind::FullStop {
             if matches!(tokens[1].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
