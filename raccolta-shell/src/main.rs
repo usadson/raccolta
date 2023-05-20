@@ -4,10 +4,13 @@
 mod auto_complete;
 mod syntax_highlighted;
 
-use std::ops::Range;
+use std::{
+    cell::RefCell,
+    ops::Range,
+    rc::Rc,
+};
 
 use raccolta_engine::EngineMessage;
-use raccolta_syntax::TokenKind;
 use strum::EnumProperty;
 
 use auto_complete::AutoCompleter;
@@ -43,13 +46,13 @@ fn get_range_of_string_slice(haystack: &str, needle: &str) -> Option<Range<usize
 fn main() {
     println!("Raccolta Shell\n");
 
-    let mut engine = raccolta_engine::Engine::new();
+    let engine = Rc::new(RefCell::new(raccolta_engine::Engine::new()));
 
     let parser = raccolta_syntax::Parser::new();
 
     loop {
         let line = inquire::Text::new(">")
-            .with_autocomplete(AutoCompleter::new())
+            .with_autocomplete(AutoCompleter::new(Rc::clone(&engine)))
             .prompt();
 
         let line = match line {
@@ -62,6 +65,8 @@ fn main() {
                 }
             }
         };
+
+        let mut engine = engine.as_ref().borrow_mut();
 
         let (result, tokens) = parser.parse_statement_extended(&line);
 

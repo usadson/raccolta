@@ -1,24 +1,66 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+use std::{
+    cell::RefCell,
+    rc::Rc,
+};
+
+use raccolta_engine::Engine;
 use raccolta_syntax::{
     keyword::{
         NonReservedWord,
         ReservedWord,
     },
     Lexer,
-    TokenKind,
+    TokenKind, Token,
 };
 use strum::IntoEnumIterator;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 pub struct AutoCompleter {
-
+    engine: Rc<RefCell<Engine>>,
 }
 
 impl AutoCompleter {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(engine: Rc<RefCell<Engine>>) -> Self {
+        Self { engine }
+    }
+
+    fn complete_select(&self, input: &str, tokens: &[Token]) -> Vec<String> {
+        if tokens.len() == 2 && tokens[1].kind() == TokenKind::Asterisk {
+            return vec!["FROM".into()];
+        }
+
+        if tokens.len() == 3 && tokens[1].kind() == TokenKind::Asterisk {
+            let last_word = tokens[2].as_string(input);
+            if !last_word.eq_ignore_ascii_case("FROM") {
+                return filter_keywords([ReservedWord::From].iter(), tokens[2].as_string(input));
+            }
+        }
+
+        if tokens.last().unwrap().kind() == TokenKind::ReservedWord(ReservedWord::From)
+            && input.chars().last().unwrap().is_whitespace() {
+            return self.engine.borrow()
+                .get_table_names()
+                .into_iter()
+                .map(|name| name.to_string())
+                .collect();
+        }
+
+        if tokens.len() > 2
+            && tokens[tokens.len() - 2].kind() == TokenKind::ReservedWord(ReservedWord::From)
+            && tokens.last().unwrap().kind() == TokenKind::Identifier {
+                return filter_strings(
+                    self.engine.borrow()
+                        .get_table_names()
+                        .into_iter()
+                        .map(|name| name.to_string()),
+                    tokens.last().unwrap().as_string(input)
+                );
+            }
+
+        Vec::new()
     }
 
     /// Get the tokens that can occur at the start of the statement.
@@ -117,6 +159,8 @@ impl inquire::Autocomplete for AutoCompleter {
                     }
                 }
             },
+
+            TokenKind::ReservedWord(ReservedWord::Select) => return Ok(self.complete_select(input, &tokens)),
 
             TokenKind::Identifier => {
                 if tokens.len() == 1 {
