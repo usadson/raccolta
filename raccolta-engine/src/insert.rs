@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+//! This module contains the logic for executing `INSERT INTO` statements.
+
 use std::sync::{RwLock, Arc};
 
 use raccolta_syntax::expression::{

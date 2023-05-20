@@ -1,6 +1,9 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+//! This crate contains the SQL/RDBMS engine for Raccolta, which executes the
+//! parsed statements by `raccolta-syntax`.
+
 mod insert;
 mod select;
 mod table;

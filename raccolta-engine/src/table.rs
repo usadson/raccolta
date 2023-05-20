@@ -1,6 +1,8 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+//! This module contains the types that manage the table and underlying columns.
+
 use std::sync::{
     Arc,
     RwLock, RwLockReadGuard,
