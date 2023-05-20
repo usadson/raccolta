@@ -1840,4 +1840,234 @@ mod tests {
         )
     }
 
+    #[rstest]
+    #[case(
+        "SELECT * FROM numbers",
+        "numbers",
+        SelectList::Asterisk,
+        &[]
+    )]
+    #[case(
+        "SELECT * FROM numbers ORDER BY number",
+        "numbers",
+        SelectList::Asterisk,
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["number".into()]),
+                ordering_specification: None,
+            }
+        ]
+    )]
+    #[case(
+        "SELECT * FROM numbers ORDER BY number ASC",
+        "numbers",
+        SelectList::Asterisk,
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["number".into()]),
+                ordering_specification: Some(OrderingSpecification::Asceding),
+            }
+        ]
+    )]
+    #[case(
+        "SELECT * FROM numbers ORDER BY number DESC",
+        "numbers",
+        SelectList::Asterisk,
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["number".into()]),
+                ordering_specification: Some(OrderingSpecification::Desceding),
+            }
+        ]
+    )]
+    #[case(
+        "SELECT FirstName, LastName FROM MyEmployees ORDER BY LastName, FirstName",
+        "MyEmployees",
+        SelectList::Sublist(vec![
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["FirstName".to_string()])
+                ),
+                alias: None,
+            }),
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["LastName".to_string()])
+                ),
+                alias: None,
+            })
+        ]),
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
+                ordering_specification: None,
+            },
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
+                ordering_specification: None,
+            }
+        ]
+    )]
+    #[case(
+        "SELECT FirstName, LastName FROM MyEmployees ORDER BY LastName ASC, FirstName ASC",
+        "MyEmployees",
+        SelectList::Sublist(vec![
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["FirstName".to_string()])
+                ),
+                alias: None,
+            }),
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["LastName".to_string()])
+                ),
+                alias: None,
+            })
+        ]),
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
+                ordering_specification: Some(OrderingSpecification::Asceding),
+            },
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
+                ordering_specification: Some(OrderingSpecification::Asceding),
+            }
+        ]
+    )]
+    #[case(
+        "SELECT FirstName, LastName FROM MyEmployees ORDER BY LastName DESC, FirstName DESC",
+        "MyEmployees",
+        SelectList::Sublist(vec![
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["FirstName".to_string()])
+                ),
+                alias: None,
+            }),
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["LastName".to_string()])
+                ),
+                alias: None,
+            })
+        ]),
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
+                ordering_specification: Some(OrderingSpecification::Desceding),
+            },
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
+                ordering_specification: Some(OrderingSpecification::Desceding),
+            }
+        ]
+    )]
+    #[case(
+        "SELECT FirstName, LastName FROM MyEmployees ORDER BY LastName ASC, FirstName DESC",
+        "MyEmployees",
+        SelectList::Sublist(vec![
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["FirstName".to_string()])
+                ),
+                alias: None,
+            }),
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["LastName".to_string()])
+                ),
+                alias: None,
+            })
+        ]),
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
+                ordering_specification: Some(OrderingSpecification::Asceding),
+            },
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
+                ordering_specification: Some(OrderingSpecification::Desceding),
+            }
+        ]
+    )]
+    #[case(
+        "SELECT FirstName, LastName FROM MyEmployees ORDER BY LastName DESC, FirstName ASC",
+        "MyEmployees",
+        SelectList::Sublist(vec![
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["FirstName".to_string()])
+                ),
+                alias: None,
+            }),
+            SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression: ValueExpression::ColumnReference(
+                    ColumnReference::BasicIdentifierChain(vec!["LastName".to_string()])
+                ),
+                alias: None,
+            })
+        ]),
+        &[
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["LastName".into()]),
+                ordering_specification: Some(OrderingSpecification::Desceding),
+            },
+            SortSpecification {
+                sort_key: ColumnReference::BasicIdentifierChain(vec!["FirstName".into()]),
+                ordering_specification: Some(OrderingSpecification::Asceding),
+            }
+        ]
+    )]
+    fn parser_select_statement_order_by(
+        #[case] input: &str,
+        #[case] table_name: &str,
+        #[case] select_list: SelectList,
+        #[case] specifications: &[SortSpecification]
+    ) {
+        let actual_statement = Parser::new().parse_statement(input)
+            .expect("failed to parse statement");
+
+        let query_spec = QuerySpecification {
+            select_list,
+            set_quantifier: SetQuantifier::default(),
+            table_expression: Some(TableExpression {
+                from_clause: FromClause {
+                    table_references: vec![
+                        TableReference::Primary(
+                            TablePrimary {
+                                kind: TablePrimaryKind::TableOrQueryName(
+                                    table_name.into()
+                                ),
+                                correlation_name: None
+                            }
+                        )
+                    ]
+                },
+                where_clause: None,
+                group_by_clause: None,
+                having_clause: None
+            })
+        };
+
+        let expected_statement = SqlExecutableStatement::SqlDataStatement(
+            SqlDataStatement::SelectStatement(
+                QueryExpression {
+                    body: QueryExpressionBody::SimpleTable(
+                        SimpleTable::QuerySpecification(query_spec)
+                    ),
+                    order_by: if specifications.is_empty() {
+                        None
+                    } else {
+                        Some(OrderByClause {
+                            sort_specification_list: specifications.into()
+                        })
+                    }
+                }
+            )
+        );
+
+        assert_eq!(actual_statement, expected_statement);
+    }
 }
