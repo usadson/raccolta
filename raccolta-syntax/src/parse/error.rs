@@ -133,6 +133,7 @@ pub enum StatementParseError<'input> {
     },
 
     #[error("unexpected keyword: `{reserved_word}` (`{found}`): expected an identifier as the name of the table to create.")]
+    #[strum(props(Help="The identifier you provided cannot be used as a table name."))]
     #[strum(props(Hint="Did you forget to escape the identifier?"))]
     CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
         found: ErrorFindLocation<'input>,
