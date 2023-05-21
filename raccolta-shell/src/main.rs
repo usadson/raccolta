@@ -11,6 +11,13 @@ use std::{
 };
 
 use raccolta_engine::EngineMessage;
+
+use raccolta_syntax::{
+    StatementParseError,
+    Token,
+    TokenKind,
+};
+
 use strum::EnumProperty;
 
 use auto_complete::AutoCompleter;
@@ -102,14 +109,7 @@ fn main() {
             Err(e) => {
                 println!("Error({}): {e}\n", e.as_ref());
 
-                if let Some(found) = e.found() {
-                    if let Some(range) = get_range_of_string_slice(&line, found) {
-                        println!("Error occurred here: ");
-                        print!("  ");
-                        syntax_highlighted::print_syntax_highlighted(&line, &tokens);
-                        println!("  {}{}", " ".repeat(range.start), "^".repeat(range.end - range.start));
-                    }
-                }
+                print_error_findings(&line, &e, &tokens);
 
                 if let Some(hint) = e.get_str("Hint") {
                     println!("Hint: {hint}");
@@ -120,5 +120,99 @@ fn main() {
                 }
             }
         }
+    }
+}
+
+fn print_error_findings<'input>(
+    input: &'input str,
+    error: &StatementParseError<'input>,
+    tokens: &[Token],
+) {
+    let mut matches = [
+        error.found()
+            .map(|found| {
+                if let Some(range) = get_range_of_string_slice(input, found) {
+                    let message = "error occurred here".to_string();
+                    Some((range, message))
+                } else {
+                    None
+                }
+            })
+            .flatten(),
+
+        error.should_be_matching()
+            .map(|should_be_matching| {
+                if let Some(range) = get_range_of_string_slice(input, should_be_matching.found) {
+                    let message = if let TokenKind::LeftParenthesis = should_be_matching.token_kind {
+                        "match this opening parenthesis here".to_string()
+                    } else {
+                        format!("match this token ({:?}) here", should_be_matching.token_kind)
+                    };
+                    Some((range, message))
+                } else {
+                    None
+                }
+            })
+            .flatten()
+    ];
+
+    matches.sort_by(|a, b| {
+        if let Some(a) = a {
+            if let Some(b) = b {
+                a.0.start.cmp(&b.0.start)
+            } else {
+                std::cmp::Ordering::Greater
+            }
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    });
+
+    let match_count = matches.iter().filter(|item| item.is_some()).count();
+
+    // Nothing to show...
+    if !matches.iter().any(|item| item.is_some()) {
+        return;
+    }
+
+    print!("  ");
+    syntax_highlighted::print_syntax_highlighted(input, &tokens);
+
+    print!("  ");
+
+    let mut last_point = 0;
+    for match_item in &matches {
+        let Some((range, message)) = match_item else { continue };
+
+        assert!(last_point <= range.start);
+
+        print!("{}^{}", " ".repeat(range.start - last_point), "~".repeat(range.end - range.start - 1));
+
+        // If there is only one match, print the message on the same line.
+        if match_count == 1 {
+            println!(" {message}");
+            return;
+        }
+
+        last_point = range.end;
+    }
+
+    println!();
+
+    for (match_item_index, match_item) in matches.iter().enumerate().rev() {
+        let Some((range, message)) = match_item else { continue };
+
+        print!("  ");
+
+        let mut start_point = 0;
+        for match_item in matches[0..match_item_index].iter().rev() {
+            let Some((range, _)) = match_item else { continue };
+            let indent = " ".repeat(range.start - start_point);
+            print!("{}|", indent);
+            start_point = range.start + 1;
+        }
+
+        let indent = " ".repeat(range.start - start_point);
+        println!("{}| {}", indent, message);
     }
 }
