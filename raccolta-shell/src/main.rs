@@ -7,7 +7,7 @@ mod syntax_highlighted;
 use std::{
     cell::RefCell,
     ops::Range,
-    rc::Rc,
+    rc::Rc, borrow::Cow,
 };
 
 use raccolta_engine::EngineMessage;
@@ -22,6 +22,47 @@ use raccolta_syntax::{
 use strum::EnumProperty;
 
 use auto_complete::AutoCompleter;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum MessageKind {
+    Help,
+    Hint,
+    Info,
+    Error,
+    Warning,
+}
+
+impl MessageKind {
+    fn print(&self, message: &str) {
+        use crossterm::{
+            execute,
+            style::{
+                Attribute,
+                Color,
+                Print,
+                ResetColor,
+                SetAttribute,
+                SetForegroundColor,
+            },
+        };
+
+        let color = match self {
+            Self::Error => Color::Red,
+            Self::Help => Color::Green,
+            Self::Hint => Color::Blue,
+            Self::Info => Color::Grey,
+            Self::Warning => Color::Yellow,
+        };
+
+        _ = execute!(
+            std::io::stdout(),
+            SetForegroundColor(color),
+            Print(message),
+            SetAttribute(Attribute::Reset),
+            ResetColor
+        );
+    }
+}
 
 /// Let's say
 /// haystack = "hello"
@@ -124,6 +165,30 @@ fn main() {
     }
 }
 
+struct Match {
+    range: Range<usize>,
+    message: Cow<'static, str>,
+    message_kind: MessageKind,
+}
+
+impl Match {
+    fn error(range: Range<usize>, message: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            range,
+            message: message.into(),
+            message_kind: MessageKind::Error,
+        }
+    }
+
+    fn hint(range: Range<usize>, message: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            range,
+            message: message.into(),
+            message_kind: MessageKind::Hint,
+        }
+    }
+}
+
 fn print_error_findings<'input>(
     input: &'input str,
     error: &StatementParseError<'input>,
@@ -132,15 +197,15 @@ fn print_error_findings<'input>(
     let mut matches = [
         error.found()
             .map(|found| {
-                let message = "error occurred here".to_string();
+                let message = "error occurred here";
                 match found {
                     ErrorFindLocation::EndOfFile { .. } => {
                         let range = input.len()..(input.len() + 1);
-                        Some((range, message))
+                        Some(Match::error(range, message))
                     }
                     ErrorFindLocation::Position(found) => {
                         if let Some(range) = get_range_of_string_slice(input, found) {
-                            Some((range, message))
+                            Some(Match::error(range, message))
                         } else {
                             None
                         }
@@ -152,12 +217,11 @@ fn print_error_findings<'input>(
         error.should_be_matching()
             .map(|should_be_matching| {
                 if let Some(range) = get_range_of_string_slice(input, should_be_matching.found) {
-                    let message = if let TokenKind::LeftParenthesis = should_be_matching.token_kind {
-                        "match this opening parenthesis here".to_string()
+                    if let TokenKind::LeftParenthesis = should_be_matching.token_kind {
+                        Some(Match::hint(range, "match this opening parenthesis here"))
                     } else {
-                        format!("match this token ({:?}) here", should_be_matching.token_kind)
-                    };
-                    Some((range, message))
+                        Some(Match::hint(range, format!("match this token ({:?}) here", should_be_matching.token_kind)))
+                    }
                 } else {
                     None
                 }
@@ -168,7 +232,7 @@ fn print_error_findings<'input>(
     matches.sort_by(|a, b| {
         if let Some(a) = a {
             if let Some(b) = b {
-                a.0.start.cmp(&b.0.start)
+                a.range.start.cmp(&b.range.start)
             } else {
                 std::cmp::Ordering::Greater
             }
@@ -191,37 +255,43 @@ fn print_error_findings<'input>(
 
     let mut last_point = 0;
     for match_item in &matches {
-        let Some((range, message)) = match_item else { continue };
+        let Some(match_item) = match_item else { continue };
 
-        assert!(last_point <= range.start);
+        assert!(last_point <= match_item.range.start);
 
-        print!("{}^{}", " ".repeat(range.start - last_point), "~".repeat(range.end - range.start - 1));
+        match_item.message_kind.print(&format!(
+            "{}^{}",
+            " ".repeat(match_item.range.start - last_point),
+            "~".repeat(match_item.range.end - match_item.range.start - 1)
+        ));
 
         // If there is only one match, print the message on the same line.
         if match_count == 1 {
-            println!(" {message}");
+            match_item.message_kind.print(&format!(" {}\n", match_item.message));
             return;
         }
 
-        last_point = range.end;
+        last_point = match_item.range.end;
     }
 
     println!();
 
     for (match_item_index, match_item) in matches.iter().enumerate().rev() {
-        let Some((range, message)) = match_item else { continue };
+        let Some(match_item) = match_item else { continue };
 
         print!("  ");
 
         let mut start_point = 0;
         for match_item in matches[0..match_item_index].iter().rev() {
-            let Some((range, _)) = match_item else { continue };
-            let indent = " ".repeat(range.start - start_point);
-            print!("{}|", indent);
+            let Some(Match{ range, message_kind, .. }) = match_item else { continue };
+            print!("{}", " ".repeat(range.start - start_point));
+            message_kind.print("|");
             start_point = range.start + 1;
         }
 
-        let indent = " ".repeat(range.start - start_point);
-        println!("{}| {}", indent, message);
+        print!("{}", " ".repeat(match_item.range.start - start_point));
+        match_item.message_kind.print("| ");
+        match_item.message_kind.print(match_item.message.as_ref());
+        println!();
     }
 }
