@@ -13,6 +13,7 @@ use std::{
 use raccolta_engine::EngineMessage;
 
 use raccolta_syntax::{
+    parse::ErrorFindLocation,
     StatementParseError,
     Token,
     TokenKind,
@@ -131,11 +132,19 @@ fn print_error_findings<'input>(
     let mut matches = [
         error.found()
             .map(|found| {
-                if let Some(range) = get_range_of_string_slice(input, found) {
-                    let message = "error occurred here".to_string();
-                    Some((range, message))
-                } else {
-                    None
+                let message = "error occurred here".to_string();
+                match found {
+                    ErrorFindLocation::EndOfFile { .. } => {
+                        let range = input.len()..(input.len() + 1);
+                        Some((range, message))
+                    }
+                    ErrorFindLocation::Position(found) => {
+                        if let Some(range) = get_range_of_string_slice(input, found) {
+                            Some((range, message))
+                        } else {
+                            None
+                        }
+                    }
                 }
             })
             .flatten(),

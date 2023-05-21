@@ -4,7 +4,11 @@
 mod error;
 mod extensions;
 
-pub use error::StatementParseError;
+pub use error::{
+    ErrorFindLocation,
+    ErrorTokenShouldBeMatching,
+    StatementParseError,
+};
 
 use std::debug_assert;
 
@@ -89,11 +93,6 @@ use crate::{
 
 use extensions::ParseArrayExtensions;
 
-use self::{
-    extensions::ParseStringExtensions,
-    error::ErrorTokenShouldBeMatching,
-};
-
 pub struct Parser {
 
 }
@@ -150,13 +149,13 @@ impl Parser {
     fn parse_clause_order_by_reserved_word_by<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::OrderByClauseUnexpectedEndOfFileExpectedBy {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::By) {
             return Err(StatementParseError::OrderByClauseUnexpectedTokenExpectedBy {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             });
         }
@@ -169,13 +168,13 @@ impl Parser {
     fn parse_clause_order_by_reserved_word_order<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::OrderByClauseUnexpectedEndOfFileExpectedBy {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::Order) {
             return Err(StatementParseError::OrderByClauseUnexpectedTokenExpectedBy {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             });
         }
@@ -187,13 +186,13 @@ impl Parser {
     fn parse_clause_where<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<WhereClause, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::WhereClauseUnexpectedEndOfFile {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::Where) {
             return Err(StatementParseError::WhereClauseUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             });
         }
@@ -208,13 +207,13 @@ impl Parser {
     fn parse_column_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ColumnReference, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::ColumnReferenceUnexpectedEndOfFile {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
         if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(_)) {
             return Err(StatementParseError::ColumnReferenceUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             });
         }
@@ -247,19 +246,19 @@ impl Parser {
     fn parse_contextually_typed_row_value_constructor<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ContextuallyTypedRowValueConstructor, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFile {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
             return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedLeftParen {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
 
         // Store this in case the right parenthesis is missing
-        let left_paren = tokens[0].as_string(input);
+        let left_paren = tokens[0].as_string(input).into();
 
         *tokens = &tokens[1..];
 
@@ -273,7 +272,7 @@ impl Parser {
 
             if is_end_of_statement(tokens) {
                 return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen {
-                    found: input.slice_empty_end(),
+                    found: ErrorFindLocation::EndOfFile { complete_input: input },
                     should_be_matching: ErrorTokenShouldBeMatching {
                         found: left_paren,
                         token_kind: TokenKind::LeftParenthesis
@@ -288,7 +287,7 @@ impl Parser {
                 TokenKind::Comma => continue,
                 TokenKind::RightParenthesis => break,
                 _ => return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedTokenExpectedCommaOrRightParen {
-                    found: separator_token.as_string(input),
+                    found: separator_token.as_string(input).into(),
                     token_kind: separator_token.kind()
                 })
             }
@@ -365,7 +364,7 @@ impl Parser {
 
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::CorrelationNameUnexpectedEndOfFile {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
@@ -374,13 +373,13 @@ impl Parser {
         } else {
             if let TokenKind::ReservedWord(reserved_word) = tokens[0].kind() {
                 return Err(StatementParseError::CorrelationNameUnexpectedReservedWord {
-                    found: tokens[0].as_string(input),
+                    found: tokens[0].as_string(input).into(),
                     reserved_word
                 });
             }
 
             Err(StatementParseError::CorrelationNameUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             })
         }
@@ -402,18 +401,18 @@ impl Parser {
     fn parse_data_type_varchar_left_paren<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<&'input str, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedLeftParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
             return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedLeftParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
                 token_kind: tokens[0].kind(),
             });
         }
 
-        let left_parenthesis = tokens[0].as_string(input);
+        let left_parenthesis = tokens[0].as_string(input).into();
 
         *tokens = &tokens[1..];
         Ok(left_parenthesis)
@@ -423,7 +422,7 @@ impl Parser {
     fn parse_data_type_varchar_length<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<usize, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedLength {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
@@ -432,7 +431,7 @@ impl Parser {
         match tokens[0].kind() {
             TokenKind::UnsignedInteger(integer) => length = integer as _,
             _ => return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedLength {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
                 token_kind: tokens[0].kind(),
             })
         }
@@ -452,7 +451,7 @@ impl Parser {
     ) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedRightParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
                 length,
                 should_be_matching: ErrorTokenShouldBeMatching {
                     found: left_paren,
@@ -463,7 +462,7 @@ impl Parser {
 
         if tokens[0].kind() != TokenKind::RightParenthesis {
             return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedRightParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
                 token_kind: tokens[0].kind(),
                 length,
                 should_be_matching: ErrorTokenShouldBeMatching {
@@ -481,7 +480,7 @@ impl Parser {
     fn parse_insert_columns_and_source<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<InsertColumnsAndSource, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::InsertColumnsAndSourceUnexpectedEndOfFileAtBeginning {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
@@ -496,12 +495,12 @@ impl Parser {
             }
 
             TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::InsertColumnsAndSourceUnexpectedKeyword {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 reserved_word,
             }),
 
             _ => Err(StatementParseError::InsertColumnsAndSourceUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             }),
         }
@@ -543,7 +542,7 @@ impl Parser {
 
         let TokenKind::ReservedWord(reserved_word) = first_token.kind() else {
             return (Err(StatementParseError::StartNotAToken {
-                found: first_token.as_string(input),
+                found: first_token.as_string(input).into(),
                 token_kind: first_token.kind()
             }), all_tokens);
         };
@@ -556,7 +555,7 @@ impl Parser {
             ReservedWord::Select => self.parse_statement_select(input, tokens),
 
             _ => Err(StatementParseError::StartUnknownKeyword {
-                found: first_token.as_string(input),
+                found: first_token.as_string(input).into(),
                 reserved_word,
             })
         }, all_tokens)
@@ -576,7 +575,7 @@ impl Parser {
             TokenKind::NonReservedWord(NonReservedWord::View) => return self.parse_statement_create_view(input, tokens),
 
             _ => Err(StatementParseError::CreateStatementUnexpectedFollowUpToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             })
         }
@@ -590,7 +589,7 @@ impl Parser {
         return Err(StatementParseError::UnsupportedFeature {
             feature_name: "CREATE DATABASE",
             feature_description: "Creating new databases",
-            found: tokens[0].as_string(input),
+            found: tokens[0].as_string(input).into(),
             token_kind: tokens[0].kind(),
         });
     }
@@ -603,7 +602,7 @@ impl Parser {
         return Err(StatementParseError::UnsupportedFeature {
             feature_name: "CREATE SCHEMA",
             feature_description: "Creating new schemas",
-            found: tokens[0].as_string(input),
+            found: tokens[0].as_string(input).into(),
             token_kind: tokens[0].kind(),
         });
     }
@@ -615,12 +614,14 @@ impl Parser {
         tokens = &tokens[1..];
 
         if is_end_of_statement(tokens) {
-            return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedEof { found: input });
+            return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedEof {
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
+            });
         }
 
         let table_name = match tokens[0].kind() {
             TokenKind::ReservedWord(reserved_word) => return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 reserved_word,
             }),
 
@@ -631,20 +632,20 @@ impl Parser {
             },
 
             _ => return Err(StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             })
         };
 
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::CreateTableUnexpectedEofAfterTableName {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
             return Err(StatementParseError::CreateTableUnexpectedEofAfterTableNameAndLeftParen {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
 
                 token_kind: tokens[0].kind()
             });
@@ -659,7 +660,7 @@ impl Parser {
 
         if !is_end_of_statement(tokens) {
             return Err(StatementParseError::CreateTableUnexpectedTokenAtEnd {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
@@ -681,7 +682,7 @@ impl Parser {
         return Err(StatementParseError::UnsupportedFeature {
             feature_name: "CREATE VIEW",
             feature_description: "Creating new views",
-            found: tokens[0].as_string(input),
+            found: tokens[0].as_string(input).into(),
             token_kind: tokens[0].kind(),
         });
     }
@@ -691,7 +692,7 @@ impl Parser {
     fn parse_statement_insert<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::InsertStatementEndOfFile {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
@@ -699,12 +700,12 @@ impl Parser {
             TokenKind::ReservedWord(ReservedWord::Into) => self.parse_statement_insert_into(input, &tokens[1..]),
 
             TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::InsertStatementUnexpectedKeyword {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 reserved_word,
             }),
 
             _ => Err(StatementParseError::InsertStatementUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             })
         }
@@ -715,13 +716,13 @@ impl Parser {
     fn parse_statement_insert_into<'input>(&self, input: &'input str, mut tokens: &[Token]) -> StatementResult<'input> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::InsertIntoStatementEndOfFile {
-                found: &input[(input.len() - 1)..]
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
             return Err(StatementParseError::InsertIntoStatementUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             })
         }
@@ -733,7 +734,7 @@ impl Parser {
 
         if !is_end_of_statement(tokens) {
             return Err(StatementParseError::InsertIntoStatementUnexpectedTrailingToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
@@ -793,7 +794,7 @@ impl Parser {
                 order_by = Some(self.parse_clause_order_by(input, &mut tokens)?);
             } else {
                 return Err(StatementParseError::SelectStatementUnexpectedToken{
-                    found: tokens[0].as_string(input),
+                    found: tokens[0].as_string(input).into(),
                     token_kind: tokens[0].kind(),
                 });
             }
@@ -835,7 +836,7 @@ impl Parser {
                 return Err(StatementParseError::UnsupportedFeature {
                     feature_name: "HAVING clause",
                     feature_description: "Filtering based on the GROUP BY clause",
-                    found: tokens[0].as_string(input),
+                    found: tokens[0].as_string(input).into(),
                     token_kind: tokens[0].kind()
                 });
             }
@@ -848,7 +849,7 @@ impl Parser {
                 return Err(StatementParseError::UnsupportedFeature {
                     feature_name: "GROUP BY clause",
                     feature_description: "Grouping the SELECT statement columns",
-                    found: tokens[0].as_string(input),
+                    found: tokens[0].as_string(input).into(),
                     token_kind: tokens[0].kind(),
                 });
             }
@@ -867,13 +868,13 @@ impl Parser {
     fn parse_statement_select_table_expression_from_clause<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<FromClause, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::FromClauseUnexpectedEof {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
         if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::From) {
             return Err(StatementParseError::FromClauseUnexpectedToken {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
@@ -955,7 +956,7 @@ impl Parser {
             return Err(StatementParseError::UnsupportedFeature {
                 feature_name: "value expression",
                 feature_description: "Diverse and/or complex value expressions",
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
             });
         }
@@ -966,30 +967,30 @@ impl Parser {
     fn parse_set_function_specification_count<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<SetFunctionSpecification, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedLeftParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedLeftParen {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
 
         // Store this in case the right parenthesis is missing
-        let left_paren = tokens[0].as_string(input);
+        let left_paren = tokens[0].as_string(input).into();
         *tokens = &tokens[1..];
 
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedAsterisk {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
         if tokens[0].kind() != TokenKind::Asterisk {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedAsterisk {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
@@ -998,7 +999,7 @@ impl Parser {
 
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedRightParen {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
                 should_be_matching: ErrorTokenShouldBeMatching {
                     found: left_paren,
                     token_kind: TokenKind::LeftParenthesis
@@ -1008,7 +1009,7 @@ impl Parser {
 
         if tokens[0].kind() != TokenKind::RightParenthesis {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind(),
                 should_be_matching: ErrorTokenShouldBeMatching {
                     found: left_paren,
@@ -1028,7 +1029,7 @@ impl Parser {
             -> Result<(&'tokens [Token], TableElement), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAtBeginning {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
@@ -1036,14 +1037,14 @@ impl Parser {
         // escape it so it becomes an identifier.
         if let TokenKind::ReservedWord(reserved_word) = tokens[0].kind() {
             return Err(StatementParseError::TableElementSingleExpectedIdentifierAsColumnNameButGotKeyword {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 reserved_word,
             });
         }
 
         if !matches!(tokens[0].kind(), TokenKind::Identifier | TokenKind::NonReservedWord(..)) {
             return Err(StatementParseError::TableElementSingleExpectedIdentifierAsColumnName {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
@@ -1053,7 +1054,7 @@ impl Parser {
 
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::TableElementSingleUnexpectedEndOfFileAfterColumnName {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
@@ -1062,7 +1063,7 @@ impl Parser {
 
         let TokenKind::ReservedWord(data_type_reserved_word) = data_type_reserved_word_token.kind() else {
             return Err(StatementParseError::TableElementSingleExpectedKeywordAsDataType {
-                found: data_type_reserved_word_token.as_string(input),
+                found: data_type_reserved_word_token.as_string(input).into(),
                 token_kind: data_type_reserved_word_token.kind(),
             })
         };
@@ -1073,7 +1074,7 @@ impl Parser {
             ),
             ReservedWord::Varchar => self.parse_data_type_varchar(input, &mut tokens)?,
             _ => return Err(StatementParseError::TableElementSingleUnknownDataTypeKeyword {
-                found: data_type_reserved_word_token.as_string(input),
+                found: data_type_reserved_word_token.as_string(input).into(),
                 reserved_word: data_type_reserved_word,
             })
         };
@@ -1093,25 +1094,25 @@ impl Parser {
     fn parse_table_elements<'input>(&self, input: &'input str, tokens: &mut &[Token], definition: &mut TableDefinition) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::TableElementsUnexpectedEndOfFileAtBeginning {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
         if tokens[0].kind() != TokenKind::LeftParenthesis {
             return Err(StatementParseError::TableElementsExpectedLeftParenthesis {
-                found: tokens[0].as_string(input),
+                found: tokens[0].as_string(input).into(),
                 token_kind: tokens[0].kind()
             });
         }
 
-        let left_paren = tokens[0].as_string(input);
+        let left_paren = tokens[0].as_string(input).into();
 
         *tokens = &tokens[1..];
 
         loop {
             if is_end_of_statement(tokens) {
                 return Err(StatementParseError::TableElementsUnexpectedEndOfFile {
-                    found: input.slice_empty_end(),
+                    found: ErrorFindLocation::EndOfFile { complete_input: input },
                     should_be_matching: ErrorTokenShouldBeMatching {
                         found: left_paren,
                         token_kind: TokenKind::LeftParenthesis,
@@ -1122,7 +1123,7 @@ impl Parser {
             if tokens[0].kind() == TokenKind::RightParenthesis {
                 if definition.elements.is_empty() {
                     return Err(StatementParseError::TableElementsUnexpectedClosingParenthesis {
-                        found: tokens[0].as_string(input)
+                        found: tokens[0].as_string(input).into()
                     });
                 }
 
@@ -1132,20 +1133,20 @@ impl Parser {
 
             if tokens[0].kind() == TokenKind::Semicolon {
                 return Err(StatementParseError::TableElementsUnexpectedSemicolon {
-                    found: tokens[0].as_string(input)
+                    found: tokens[0].as_string(input).into()
                 });
             }
 
             if tokens[0].kind() == TokenKind::Comma {
                 if definition.elements.is_empty() {
                     return Err(StatementParseError::TableElementsUnexpectedCommaBeforeFirstColumn {
-                        found: tokens[0].as_string(input),
+                        found: tokens[0].as_string(input).into(),
                     });
                 }
 
                 if is_end_of_statement(&tokens[1..]) {
                     return Err(StatementParseError::TableElementsUnexpectedEndOfFileAfterComma {
-                        found: tokens[0].as_string(input),
+                        found: tokens[0].as_string(input).into(),
                     });
                 }
 
@@ -1169,7 +1170,7 @@ impl Parser {
     fn parse_table_reference<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<TableReference, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::TableReferenceUnexpectedEndOfFile {
-                found: input.slice_empty_end(),
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
             });
         }
 
@@ -1189,12 +1190,12 @@ impl Parser {
             }
 
             TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::TableReferenceUnexpectedKeyword {
-                found: first_token.as_string(input),
+                found: first_token.as_string(input).into(),
                 reserved_word
             }),
 
             _ => Err(StatementParseError::TableReferenceUnexpectedToken {
-                found: first_token.as_string(input),
+                found: first_token.as_string(input).into(),
                 token_kind: first_token.kind()
             })
         }
@@ -1217,7 +1218,7 @@ impl Parser {
     fn parse_value_expression<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<ValueExpression, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::ValueExpressionUnexpectedEndOfFile {
-                found: input.slice_empty_end()
+                found: ErrorFindLocation::EndOfFile { complete_input: input }
             });
         }
 
@@ -1258,7 +1259,7 @@ impl Parser {
             ),
 
             _ => return Err(StatementParseError::ValueExpressionUnexpectedToken {
-                found: first_token.as_string(input),
+                found: first_token.as_string(input).into(),
                 token_kind: first_token.kind(),
             })
         };
@@ -1371,7 +1372,7 @@ mod tests {
     #[case("CREATE TABLE character (value INT);", ReservedWord::Character, 13..22)]
     fn parser_create_table_statement_keyword_as_table_name(#[case] input: &str, #[case] reserved_word: ReservedWord, #[case] range: Range<usize>) {
         let expected = StatementParseError::CreateTableStatementExpectedTableNameIdentifierUnexpectedKeyword {
-            found: &input[range],
+            found: input[range].into(),
             reserved_word,
         };
 
@@ -1518,7 +1519,7 @@ mod tests {
     #[test]
     fn parser_select_statement_erroneous_from_asterisk(#[case] input: &str, #[case] idx: usize) {
         parser_select_statement_erroneous_base(input, StatementParseError::TableReferenceUnexpectedToken {
-            found: &input[idx..=idx],
+            found: input[idx..=idx].into(),
             token_kind: TokenKind::Asterisk
         });
     }
@@ -1683,7 +1684,7 @@ mod tests {
             parser.parse_statement(input),
             Err(
                 StatementParseError::SelectStatementUnexpectedToken {
-                    found: &input[range],
+                    found: input[range].into(),
                     token_kind,
                 }
             )
