@@ -8,19 +8,41 @@ use std::sync::{
     RwLock
 };
 
-use raccolta_syntax::{expression::{
-    query_specification::{
-        QuerySpecification,
-        SelectList, SelectSublist
-    }, ColumnReference, ValueExpression
-}, clause::order_by_clause::{OrderByClause, OrderingSpecification}};
+use raccolta_syntax::{
+    expression::{
+        ColumnReference,
+        query_specification::{
+            QuerySpecification,
+            SelectList,
+            SelectSublist,
+        },
+        ValueExpression,
+    },
+    clause::order_by_clause::{
+        OrderByClause,
+        OrderingSpecification,
+    },
+};
 
 use crate::{
     EngineMessage,
     EngineResult,
-    sorting::{EngineRowSortIteratorExtensionTrait, EngineSortingMethod, EngineSortingElement},
-    table::EngineTable,
+    sorting::{
+        EngineRowSortIteratorExtensionTrait,
+        EngineSortingElement,
+        EngineSortingMethod,
+    },
+    table::{
+        EngineTable,
+        EngineTableColumnIterator,
+    },
 };
+
+struct SelectionPhaseResult {
+    row_count: usize,
+    column_names: Vec<String>,
+    row_iterator: EngineTableColumnIterator,
+}
 
 /// Execute a `SELECT` statement.
 pub fn execute(
@@ -28,17 +50,39 @@ pub fn execute(
     table: Arc<RwLock<EngineTable>>,
     order_by_clause: Option<OrderByClause>,
 ) -> EngineResult {
-    match &statement.select_list {
-        SelectList::Asterisk => execute_select_return_all(table, order_by_clause),
-        SelectList::Sublist(sublist) => execute_select_sublist(table, order_by_clause, sublist),
+    match execute_inner(statement, table, order_by_clause) {
+        Ok(result) => result,
+        Err(result) => result,
     }
+}
+
+fn execute_inner(
+    statement: QuerySpecification,
+    table: Arc<RwLock<EngineTable>>,
+    order_by_clause: Option<OrderByClause>
+) -> Result<EngineResult, EngineResult> {
+    let selection_phase = match &statement.select_list {
+        SelectList::Asterisk => execute_select_return_all(table)?,
+        SelectList::Sublist(sublist) => execute_select_sublist(table, sublist)?,
+    };
+
+    let sorting_method = resolve_sorting_method(&selection_phase.column_names, order_by_clause)?;
+
+    let row_iterator = selection_phase.row_iterator
+        .apply_order_by(sorting_method);
+
+    Ok(EngineResult {
+        messages: Vec::new(),
+        column_names: selection_phase.column_names,
+        row_count: selection_phase.row_count,
+        row_iterator,
+    })
 }
 
 fn execute_select_sublist(
     table_ptr: Arc<RwLock<EngineTable>>,
-    order_by_clause: Option<OrderByClause>,
     sublist: &[SelectSublist],
-) -> EngineResult {
+) -> Result<SelectionPhaseResult, EngineResult> {
     let table = table_ptr.as_ref().read().unwrap();
 
     let mut column_indices = Vec::with_capacity(sublist.len());
@@ -55,9 +99,9 @@ fn execute_select_sublist(
                                 });
                             match column {
                                 Some(column) => column_indices.push(column.0),
-                                None => return EngineResult::with_messages(vec![
+                                None => return Err(EngineResult::with_messages(vec![
                                     EngineMessage::Error(format!("failed to find column: \"{}\"", chain.last().unwrap()).into())
-                                ])
+                                ]))
                             }
 
                             continue;
@@ -68,9 +112,9 @@ fn execute_select_sublist(
             }
         }
 
-        return EngineResult::with_messages(vec![
+        return Err(EngineResult::with_messages(vec![
             EngineMessage::Error(format!("column not resolvable: {select_element:?}").into())
-        ]);
+        ]));
     }
 
     debug_assert_eq!(column_indices.len(), sublist.len());
@@ -92,26 +136,18 @@ fn execute_select_sublist(
 
     let row_count = table.columns[0].values.len();
 
-    let sorting_method = match resolve_sorting_method(&column_names, order_by_clause) {
-        Ok(sorting_method) => sorting_method,
-        Err(engine_result) => return engine_result,
-    };
-
     drop(table);
 
-    EngineResult {
-        messages: Vec::new(),
+    Ok(SelectionPhaseResult {
         column_names,
         row_count,
         row_iterator: EngineTable::iter_with(table_ptr, column_indices)
-            .apply_order_by(sorting_method)
-    }
+    })
 }
 
 fn execute_select_return_all(
     table_ptr: Arc<RwLock<EngineTable>>,
-    order_by_clause: Option<OrderByClause>,
-) -> EngineResult {
+) -> Result<SelectionPhaseResult, EngineResult> {
     let table = table_ptr.as_ref().read().unwrap();
 
     let column_names = table.columns.iter()
@@ -123,21 +159,11 @@ fn execute_select_return_all(
     // Ha ha, this isn't what it seams like :^)
     drop(table);
 
-    let sorting_method = match resolve_sorting_method(
-        &column_names,
-        order_by_clause
-    ) {
-        Ok(sorting_method) => sorting_method,
-        Err(engine_result) => return engine_result,
-    };
-
-    EngineResult {
-        messages: Vec::new(),
+    Ok(SelectionPhaseResult {
         column_names,
         row_count,
-        row_iterator: EngineTable::iter(table_ptr)
-            .apply_order_by(sorting_method)
-    }
+        row_iterator: EngineTable::iter(table_ptr),
+    })
 }
 
 fn resolve_sorting_method(
