@@ -7,17 +7,26 @@ use raccolta_syntax::clause::order_by_clause::OrderingSpecification;
 
 use crate::EngineRow;
 
+/// A sorting element is a translated step from `ORDER BY` clauses that specify
+/// in which way and which order to sort the table. This is part of
+/// [`EngineSortingElement`], which contain all steps.
 pub struct EngineSortingElement {
     pub column_index: usize,
     pub ordering_specification: OrderingSpecification,
 }
 
+/// Sorting methods are translated steps from `ORDER BY` clauses that specify
+/// in which way and which order to sort the table. This struct can be empty,
+///  which means that no sorting is requested.
 pub type EngineSortingMethod = Vec<EngineSortingElement>;
 
 /// This trait adds access to the [`EngineRowSortIterator`] to iterators
 /// which have an item of type [`EngineRow`].
 pub trait EngineRowSortIteratorExtensionTrait
         where Self: Sized + Iterator<Item = EngineRow> + 'static {
+    /// Sort (`ORDER BY` in SQL terms) the table using the given
+    /// [`EngineSortingMethod`]. This can be empty, which means that no sorting
+    /// is requested.
     fn apply_order_by(
         self,
         sorting_method: EngineSortingMethod
