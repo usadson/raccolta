@@ -23,8 +23,20 @@ use strum::EnumProperty;
 
 use auto_complete::AutoCompleter;
 
+use crossterm::{
+    execute,
+    style::{
+        Attribute,
+        Color,
+        ResetColor,
+        SetAttribute,
+        SetForegroundColor,
+    },
+};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MessageKind {
+    Debug,
     Help,
     Hint,
     Info,
@@ -34,30 +46,30 @@ pub enum MessageKind {
 
 impl MessageKind {
     fn print(&self, message: &str) {
-        use crossterm::{
-            execute,
-            style::{
-                Attribute,
-                Color,
-                Print,
-                ResetColor,
-                SetAttribute,
-                SetForegroundColor,
-            },
-        };
+        self.print_with(|| {
+            print!("{message}");
+        });
+    }
 
+    fn print_with(&self, f: impl FnOnce() -> ()) {
         let color = match self {
+            Self::Debug => Color::Magenta,
             Self::Error => Color::Red,
             Self::Help => Color::Green,
             Self::Hint => Color::Blue,
-            Self::Info => Color::Grey,
+            Self::Info => Color::DarkGrey,
             Self::Warning => Color::Yellow,
         };
 
         _ = execute!(
             std::io::stdout(),
-            SetForegroundColor(color),
-            Print(message),
+            SetForegroundColor(color)
+        );
+
+        f();
+
+        _ = execute!(
+            std::io::stdout(),
             SetAttribute(Attribute::Reset),
             ResetColor
         );
@@ -100,6 +112,8 @@ fn main() {
     let parser = raccolta_syntax::Parser::new();
 
     loop {
+        println!();
+
         let line = inquire::Text::new(">")
             .with_autocomplete(AutoCompleter::new(Rc::clone(&engine)))
             .prompt();
@@ -149,20 +163,37 @@ fn main() {
                 println!("{} row(s)", result.row_count);
             }
             Err(e) => {
-                println!("Error({}): {e}\n", e.as_ref());
+                MessageKind::Error.print("error");
+                println!(": {e}");
 
                 print_error_findings(&line, &e, &tokens);
 
                 if let Some(hint) = e.get_str("Hint") {
-                    println!("Hint: {hint}");
+                    MessageKind::Hint.print("hint");
+                    println!(": {hint}");
                 }
 
                 if let Some(help) = e.get_str("Help") {
-                    println!("Help: {help}");
+                    MessageKind::Help.print("help");
+                    println!(": {help}");
                 }
+
+                print_debug_info(e);
             }
         }
     }
+}
+
+fn print_debug_info(error: StatementParseError) {
+    MessageKind::Debug.print("debug");
+
+    _ = execute!(
+        std::io::stdout(),
+        SetForegroundColor(Color::DarkGrey),
+        crossterm::style::Print(&format!(": internally known as: StatementParseError::{}\n", error.as_ref())),
+        SetAttribute(Attribute::Reset),
+        ResetColor
+    );
 }
 
 struct Match {
@@ -248,6 +279,9 @@ fn print_error_findings<'input>(
         return;
     }
 
+    // Spacing after the previous message, so the output will become clearer.
+    println!();
+
     print!("  ");
     syntax_highlighted::print_syntax_highlighted(input, &tokens);
 
@@ -268,6 +302,10 @@ fn print_error_findings<'input>(
         // If there is only one match, print the message on the same line.
         if match_count == 1 {
             match_item.message_kind.print(&format!(" {}\n", match_item.message));
+
+            // Spacing so it'll become clearer, especially if there is a
+            // follow-up message.
+            println!();
             return;
         }
 
@@ -294,4 +332,8 @@ fn print_error_findings<'input>(
         match_item.message_kind.print(match_item.message.as_ref());
         println!();
     }
+
+    // Spacing so it'll become clearer, especially if there is a follow-up
+    // message.
+    println!();
 }
