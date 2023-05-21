@@ -89,7 +89,10 @@ use crate::{
 
 use extensions::ParseArrayExtensions;
 
-use self::extensions::ParseStringExtensions;
+use self::{
+    extensions::ParseStringExtensions,
+    error::ErrorTokenShouldBeMatching,
+};
 
 pub struct Parser {
 
@@ -255,6 +258,9 @@ impl Parser {
             });
         }
 
+        // Store this in case the right parenthesis is missing
+        let left_paren = tokens[0].as_string(input);
+
         *tokens = &tokens[1..];
 
         let mut constructor = ContextuallyTypedRowValueConstructor {
@@ -268,6 +274,10 @@ impl Parser {
             if is_end_of_statement(tokens) {
                 return Err(StatementParseError::ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen {
                     found: input.slice_empty_end(),
+                    should_be_matching: ErrorTokenShouldBeMatching {
+                        found: left_paren,
+                        token_kind: TokenKind::LeftParenthesis
+                    },
                 });
             }
 
@@ -378,9 +388,9 @@ impl Parser {
 
     /// Parse the `<data type>` when the token **`VARCHAR`** was consumed.
     fn parse_data_type_varchar<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<DataType, StatementParseError<'input>> {
-        self.parse_data_type_varchar_left_paren(input, tokens)?;
+        let left_paren = self.parse_data_type_varchar_left_paren(input, tokens)?;
         let length = self.parse_data_type_varchar_length(input, tokens)?;
-        self.parse_data_type_varchar_right_paren(input, tokens, length)?;
+        self.parse_data_type_varchar_right_paren(input, tokens, left_paren, length)?;
 
         Ok(DataType::Predefined(PredefinedType::CharacterString {
             definition: CharacterStringType::Varying { length },
@@ -389,7 +399,7 @@ impl Parser {
     }
 
     /// Parse the left parenthesis `(` of a `VARCHAR` data type.
-    fn parse_data_type_varchar_left_paren<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<(), StatementParseError<'input>> {
+    fn parse_data_type_varchar_left_paren<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<&'input str, StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedLeftParen {
                 found: input.slice_empty_end(),
@@ -403,8 +413,10 @@ impl Parser {
             });
         }
 
+        let left_parenthesis = tokens[0].as_string(input);
+
         *tokens = &tokens[1..];
-        Ok(())
+        Ok(left_parenthesis)
     }
 
     /// Parse the length of the `VARCHAR` data type.
@@ -435,12 +447,17 @@ impl Parser {
         &self,
         input: &'input str,
         tokens: &mut &[Token],
+        left_paren: &'input str,
         length: usize,
     ) -> Result<(), StatementParseError<'input>> {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::DataTypeVarcharUnexpectedEndOfFileExpectedRightParen {
                 found: input.slice_empty_end(),
-                length
+                length,
+                should_be_matching: ErrorTokenShouldBeMatching {
+                    found: left_paren,
+                    token_kind: TokenKind::LeftParenthesis
+                },
             });
         }
 
@@ -448,7 +465,11 @@ impl Parser {
             return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedRightParen {
                 found: input.slice_empty_end(),
                 token_kind: tokens[0].kind(),
-                length
+                length,
+                should_be_matching: ErrorTokenShouldBeMatching {
+                    found: left_paren,
+                    token_kind: TokenKind::LeftParenthesis
+                },
             });
         }
 
@@ -956,6 +977,8 @@ impl Parser {
             });
         }
 
+        // Store this in case the right parenthesis is missing
+        let left_paren = tokens[0].as_string(input);
         *tokens = &tokens[1..];
 
         if is_end_of_statement(tokens) {
@@ -976,13 +999,21 @@ impl Parser {
         if is_end_of_statement(tokens) {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedEofExpectedRightParen {
                 found: input.slice_empty_end(),
+                should_be_matching: ErrorTokenShouldBeMatching {
+                    found: left_paren,
+                    token_kind: TokenKind::LeftParenthesis
+                },
             });
         }
 
         if tokens[0].kind() != TokenKind::RightParenthesis {
             return Err(StatementParseError::SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen {
                 found: tokens[0].as_string(input),
-                token_kind: tokens[0].kind()
+                token_kind: tokens[0].kind(),
+                should_be_matching: ErrorTokenShouldBeMatching {
+                    found: left_paren,
+                    token_kind: TokenKind::LeftParenthesis
+                },
             });
         }
 
@@ -1073,12 +1104,18 @@ impl Parser {
             });
         }
 
+        let left_paren = tokens[0].as_string(input);
+
         *tokens = &tokens[1..];
 
         loop {
             if is_end_of_statement(tokens) {
                 return Err(StatementParseError::TableElementsUnexpectedEndOfFile {
-                    found: input.slice_empty_end()
+                    found: input.slice_empty_end(),
+                    should_be_matching: ErrorTokenShouldBeMatching {
+                        found: left_paren,
+                        token_kind: TokenKind::LeftParenthesis,
+                    }
                 });
             }
 

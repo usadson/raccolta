@@ -13,6 +13,14 @@ use crate::{
     TokenKind,
 };
 
+/// This is a member of [`StatementParseError`], which is used when denoting a
+/// missing token of some kind. For example, when an `(` is not closed.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ErrorTokenShouldBeMatching<'input> {
+    pub found: &'input str,
+    pub token_kind: TokenKind,
+}
+
 /// Describes an error in parsing a statement.
 ///
 /// # To Do
@@ -47,6 +55,7 @@ pub enum StatementParseError<'input> {
     #[strum(props(Hint="Did you forget to add a row value constructor, or mistyped the last comma `,`?"))]
     ContextuallyTypedRowValueConstructorUnexpectedEndOfFileExpectedCommaOrRightParen {
         found: &'input str,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("unexpected token: {token_kind} (`{found}`), expected comma `,` or closing parenthesis `(`")]
@@ -140,6 +149,7 @@ pub enum StatementParseError<'input> {
     DataTypeVarcharUnexpectedEndOfFileExpectedRightParen {
         found: &'input str,
         length: usize,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("unexpected token: {token_kind} (`{found}`), expected `(` after `VARCHAR`")]
@@ -162,6 +172,7 @@ pub enum StatementParseError<'input> {
         found: &'input str,
         token_kind: TokenKind,
         length: usize,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("empty input provided for statement")]
@@ -300,6 +311,7 @@ pub enum StatementParseError<'input> {
     SetFunctionSpecificationCountUnexpectedTokenExpectedRightParen {
         found: &'input str,
         token_kind: TokenKind,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("unexpected end-of-file, expected `*` after `COUNT(`")]
@@ -318,6 +330,7 @@ pub enum StatementParseError<'input> {
     #[strum(props(Help="Complete the COUNT set function specification: `COUNT(*)`"))]
     SetFunctionSpecificationCountUnexpectedEofExpectedRightParen {
         found: &'input str,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("statement doesn't start with a keyword, but a {token_kind:?}: `{found}`")]
@@ -395,6 +408,7 @@ pub enum StatementParseError<'input> {
     #[strum(props(Hint="Did you forget to close the column list by inserting a closing parenthesis `)`?"))]
     TableElementsUnexpectedEndOfFile {
         found: &'input str,
+        should_be_matching: ErrorTokenShouldBeMatching<'input>,
     },
 
     #[error("unexpected end-of-file after the comma that is separating column definitions: `{found}`")]
