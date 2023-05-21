@@ -56,6 +56,8 @@ pub fn execute(
     }
 }
 
+/// The inner function of [`execute`], which returns an [`Result`] for easy
+/// error propagation.
 fn execute_inner(
     statement: QuerySpecification,
     table: Arc<RwLock<EngineTable>>,
@@ -79,6 +81,14 @@ fn execute_inner(
     })
 }
 
+/// Get a selected list of columns from the table. This is different from
+/// [`execute_select_return_all`], which returns an iterator with all columns.
+///
+/// # Example
+/// ```sql
+/// SELECT column_name, other_column_name
+/// FROM table_name
+/// ```
 fn execute_select_sublist(
     table_ptr: Arc<RwLock<EngineTable>>,
     sublist: &[SelectSublist],
@@ -145,6 +155,15 @@ fn execute_select_sublist(
     })
 }
 
+/// Get a all columns from the table. This is different from
+/// [`execute_select_sublist`], which returns an iterator with the selected
+/// columns.
+///
+/// # Example
+/// ```sql
+/// SELECT *
+/// FROM table_name
+/// ```
 fn execute_select_return_all(
     table_ptr: Arc<RwLock<EngineTable>>,
 ) -> Result<SelectionPhaseResult, EngineResult> {
@@ -166,6 +185,9 @@ fn execute_select_return_all(
     })
 }
 
+/// Resolve a [`EngineSortingMethod`], which means that the [`OrderByClause`] is
+/// translated to steps that the engine can use. These steps tell the engine in
+/// which way and which order to sort the table in.
 fn resolve_sorting_method(
     column_names: &Vec<String>,
     order_by_clause: Option<OrderByClause>
