@@ -64,6 +64,19 @@ pub struct ErrorTokenShouldBeMatching<'input> {
 /// ```
 #[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty, AsRefStr, enum_fields::EnumFields)]
 pub enum StatementParseError<'input> {
+    #[error("unexpected reserved identifier: {reserved_word}, expected an identifier as alias")]
+    #[strum(props(Hint="Did you forget to escape the identifier?"))]
+    AsClauseUnexpectedReservedWord {
+        found: ErrorFindLocation<'input>,
+        reserved_word: ReservedWord,
+    },
+
+    #[error("unexpected token: {token_kind}, expected an identifier as alias")]
+    AsClauseUnexpectedToken {
+        found: ErrorFindLocation<'input>,
+        token_kind: TokenKind,
+    },
+
     #[error("unexpected end-of-file: expected column reference")]
     ColumnReferenceUnexpectedEndOfFile {
         found: ErrorFindLocation<'input>,

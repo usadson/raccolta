@@ -117,6 +117,43 @@ impl Parser {
         }
     }
 
+    /// Parse an optional `<as clause>`, which is colloquially known as an
+    /// alias. See the example below:
+    /// ```sql
+    /// SELECT column_name AS alias_name
+    /// FROM table_name
+    /// ```
+    fn parse_as_clause_optional<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<Option<String>, StatementParseError<'input>> {
+        if tokens.len() < 2 {
+            return Ok(None);
+        }
+
+        if tokens[0].kind() != TokenKind::ReservedWord(ReservedWord::As) {
+            return Ok(None);
+        }
+
+        let alias_token = tokens[1];
+        let alias = alias_token.as_string(input);
+
+        *tokens = &tokens[2..];
+
+        match alias_token.kind() {
+            TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
+                return Ok(Some(alias.to_string()));
+            }
+
+            TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::AsClauseUnexpectedReservedWord {
+                found: ErrorFindLocation::Position(alias),
+                reserved_word,
+            }),
+
+            _ => Err(StatementParseError::AsClauseUnexpectedToken {
+                found: ErrorFindLocation::Position(alias),
+                token_kind: alias_token.kind(),
+            })
+        }
+    }
+
     /// Parses the **`ORDER BY`** statement.
     fn parse_clause_order_by<'input>(&self, input: &'input str, tokens: &mut &[Token]) -> Result<OrderByClause, StatementParseError<'input>> {
         self.parse_clause_order_by_reserved_word_order(input, tokens)?;
@@ -937,15 +974,23 @@ impl Parser {
 
             match self.parse_value_expression(input, tokens) {
                 Ok(value_expression) => {
-                    sublist.push(SelectSublist::DerivedColumn(DerivedColumn {
-                        value_expression,
-                        alias: None
-                    }));
-                    continue;
+                    match self.parse_as_clause_optional(input, tokens) {
+                        Ok(alias) => {
+                            sublist.push(SelectSublist::DerivedColumn(DerivedColumn {
+                                value_expression,
+                                alias
+                            }));
+                            continue;
+                        }
+                        Err(err) => {
+                            *tokens = tokens_saved;
+                            error = Some(err);
+                        }
+                    };
                 }
-                Err(e) => {
+                Err(err) => {
                     *tokens = tokens_saved;
-                    error = Some(e);
+                    error = Some(err);
                 }
             }
 
