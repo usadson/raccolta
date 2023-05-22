@@ -619,19 +619,6 @@ impl Parser {
     }
 
     /// Parses the rest of the statement when the first two tokens were
-    /// **`CREATE DATABASE`**.
-    fn parse_statement_create_database<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
-        _ = input;
-        _ = tokens;
-        return Err(StatementParseError::UnsupportedFeature {
-            feature_name: "CREATE DATABASE",
-            feature_description: "Creating new databases",
-            found: tokens[0].as_string(input).into(),
-            token_kind: tokens[0].kind(),
-        });
-    }
-
-    /// Parses the rest of the statement when the first two tokens were
     /// **`CREATE SCHEMA`**.
     fn parse_statement_create_schema<'input>(&self, input: &'input str, tokens: &[Token]) -> StatementResult<'input> {
         _ = input;
