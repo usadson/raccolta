@@ -52,16 +52,6 @@ pub struct ErrorTokenShouldBeMatching<'input> {
 }
 
 /// Describes an error in parsing a statement.
-///
-/// # To Do
-/// TODO: it would be very cool to match these parenthesis, something like:
-/// ```text
-/// INSERT INTO table1
-/// VALUES (1, 2
-///        ^    ^ error occurred here
-///        |
-///        `- to match this value here
-/// ```
 #[derive(Copy, Clone, Debug, Error, PartialEq, EnumProperty, AsRefStr, enum_fields::EnumFields)]
 pub enum StatementParseError<'input> {
     #[error("unexpected reserved identifier: {reserved_word}, expected an identifier as alias")]
