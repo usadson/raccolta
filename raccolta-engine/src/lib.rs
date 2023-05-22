@@ -87,7 +87,7 @@ impl Engine {
             DataType::Predefined(PredefinedType::Numeric(NumericType::Integer)) => {
                 Some(EngineColumnContainer::Integers(Vec::new()))
             }
-            DataType::Predefined(PredefinedType::CharacterString { definition, character_set }) => {
+            DataType::Predefined(PredefinedType::CharacterString { definition, .. }) => {
                 match definition {
                     CharacterStringType::Varying { length } => Some(
                         EngineColumnContainer::StringsVarying {
@@ -178,6 +178,7 @@ impl Engine {
         let mut columns = Vec::with_capacity(statement.elements.len());
 
         for element in statement.elements {
+            #[allow(irrefutable_let_patterns)]
             let TableElement::ColumnDefinition(column) = element else {
                 continue;
             };
