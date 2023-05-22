@@ -66,14 +66,12 @@ impl ParseArrayExtensions for [Token] {
 
     fn is_reserved_word(&self) -> Option<ReservedWord> {
         self.get(0)
-            .map(|token| token.kind().to_reserved_word())
-            .flatten()
+            .and_then(|token| token.kind().to_reserved_word())
     }
 
     fn is_non_reserved_word(&self) -> Option<NonReservedWord> {
         self.get(0)
-            .map(|token| token.kind().to_non_reserved_word())
-            .flatten()
+            .and_then(|token| token.kind().to_non_reserved_word())
     }
 
     fn next(self: &mut &Self) {
@@ -87,11 +85,11 @@ pub(super) trait ParseStringExtensions {
     ///
     /// This is useful for getting a lifetime to `self` and marking an EOF
     /// point.
-    fn slice_empty_end<'a>(&'a self) -> &'a Self;
+    fn slice_empty_end(&self) -> &Self;
 }
 
 impl ParseStringExtensions for str {
-    fn slice_empty_end<'a>(&'a self) -> &'a Self {
+    fn slice_empty_end(&self) -> &Self {
         &self[(self.len() - 1)..]
     }
 }

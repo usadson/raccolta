@@ -46,7 +46,7 @@ impl<'a> Lexer<'a> {
 
         let first_character_byte_idx = self.character_byte_idx;
 
-        let Some(first_character) = self.input[first_character_byte_idx..].chars().nth(0) else {
+        let Some(first_character) = self.input[first_character_byte_idx..].chars().next() else {
             return None;
         };
 
@@ -152,7 +152,7 @@ impl<'a> Lexer<'a> {
 
     /// Gets the current character pointed to by the [`index`].
     fn current_character(&self) -> Option<char> {
-        self.input[self.character_byte_idx..].chars().nth(0)
+        self.input[self.character_byte_idx..].chars().next()
     }
 
     /// Check if the current character is a `<digit>`.
@@ -161,7 +161,7 @@ impl<'a> Lexer<'a> {
             return false;
         };
 
-        matches!(character, '0'..='9')
+        character.is_ascii_digit()
     }
 
     /// Check if the current character is an `<identifier body character>`.

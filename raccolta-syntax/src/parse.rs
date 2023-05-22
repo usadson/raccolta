@@ -93,6 +93,7 @@ use crate::{
 
 use extensions::ParseArrayExtensions;
 
+#[derive(Debug, Default)]
 pub struct Parser {
 
 }
@@ -112,9 +113,7 @@ fn is_end_of_statement(tokens: &[Token]) -> bool {
 impl Parser {
     /// Creates a new [`Parser`] object.
     pub fn new() -> Self {
-        Self {
-            // ...
-        }
+        Self::default()
     }
 
     /// Parse an optional `<as clause>`, which is colloquially known as an
@@ -139,8 +138,8 @@ impl Parser {
 
         match alias_token.kind() {
             TokenKind::Identifier | TokenKind::NonReservedWord(..) => {
-                return Ok(Some(alias.to_string()));
-            }
+                Ok(Some(alias.to_string()))
+            },
 
             TokenKind::ReservedWord(reserved_word) => Err(StatementParseError::AsClauseUnexpectedReservedWord {
                 found: ErrorFindLocation::Position(alias),
@@ -295,7 +294,7 @@ impl Parser {
         }
 
         // Store this in case the right parenthesis is missing
-        let left_paren = tokens[0].as_string(input).into();
+        let left_paren = tokens[0].as_string(input);
 
         *tokens = &tokens[1..];
 
@@ -449,7 +448,7 @@ impl Parser {
             });
         }
 
-        let left_parenthesis = tokens[0].as_string(input).into();
+        let left_parenthesis = tokens[0].as_string(input);
 
         *tokens = &tokens[1..];
         Ok(left_parenthesis)
@@ -463,15 +462,13 @@ impl Parser {
             });
         }
 
-        let length: usize;
-
-        match tokens[0].kind() {
-            TokenKind::UnsignedInteger(integer) => length = integer as _,
+        let length: usize = match tokens[0].kind() {
+            TokenKind::UnsignedInteger(integer) => integer as _,
             _ => return Err(StatementParseError::DataTypeVarcharUnexpectedTokenExpectedLength {
                 found: ErrorFindLocation::EndOfFile { complete_input: input },
                 token_kind: tokens[0].kind(),
             })
-        }
+        };
 
         *tokens = &tokens[1..];
 
@@ -982,7 +979,7 @@ impl Parser {
         }
 
         // Store this in case the right parenthesis is missing
-        let left_paren = tokens[0].as_string(input).into();
+        let left_paren = tokens[0].as_string(input);
         *tokens = &tokens[1..];
 
         if is_end_of_statement(tokens) {
@@ -1108,7 +1105,7 @@ impl Parser {
             });
         }
 
-        let left_paren = tokens[0].as_string(input).into();
+        let left_paren = tokens[0].as_string(input);
 
         *tokens = &tokens[1..];
 
