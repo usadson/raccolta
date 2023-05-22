@@ -947,8 +947,6 @@ impl Parser {
                 return Ok(SelectList::Sublist(sublist));
             }
 
-            let tokens_saved = *tokens;
-
             if !sublist.is_empty() {
                 if tokens[0].kind() != TokenKind::Comma {
                     return Ok(SelectList::Sublist(sublist));
@@ -957,40 +955,13 @@ impl Parser {
                 tokens.next();
             }
 
-            let mut error = None;
+            let value_expression = self.parse_value_expression(input, tokens)?;
+            let alias = self.parse_as_clause_optional(input, tokens)?;
 
-            match self.parse_value_expression(input, tokens) {
-                Ok(value_expression) => {
-                    match self.parse_as_clause_optional(input, tokens) {
-                        Ok(alias) => {
-                            sublist.push(SelectSublist::DerivedColumn(DerivedColumn {
-                                value_expression,
-                                alias
-                            }));
-                            continue;
-                        }
-                        Err(err) => {
-                            *tokens = tokens_saved;
-                            error = Some(err);
-                        }
-                    };
-                }
-                Err(err) => {
-                    *tokens = tokens_saved;
-                    error = Some(err);
-                }
-            }
-
-            if let Some(error) = error {
-                return Err(error);
-            }
-
-            return Err(StatementParseError::UnsupportedFeature {
-                feature_name: "value expression",
-                feature_description: "Diverse and/or complex value expressions",
-                found: tokens[0].as_string(input).into(),
-                token_kind: tokens[0].kind(),
-            });
+            sublist.push(SelectSublist::DerivedColumn(DerivedColumn {
+                value_expression,
+                alias
+            }));
         }
     }
 
