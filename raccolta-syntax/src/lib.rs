@@ -1,6 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
+pub mod characters;
 pub mod clause;
 pub mod common;
 pub mod expression;
@@ -12,6 +13,7 @@ pub mod set_function;
 pub mod statement;
 pub mod token;
 
+use characters::SqlCharacterExtensions;
 use keyword::{ReservedWord, NonReservedWord};
 pub use token::{Token, TokenKind};
 
@@ -179,12 +181,7 @@ impl<'a> Lexer<'a> {
             return false;
         };
 
-        Self::is_whitespace(character)
-    }
-
-    /// Checks if the character is whitespace.
-    fn is_whitespace(character: char) -> bool {
-        matches!(character, ' ' | '\n' | '\r' | '\t')
+        character.is_sql_whitespace()
     }
 
     /// Advances the index to the next character.
