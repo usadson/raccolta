@@ -75,6 +75,11 @@ fn execute_from_contextually_typed_table_value_constructor_impl(
 fn is_column_value_trivially_convertible_to(column_value: &ContextuallyTypedRowValueConstructorElement, data_type: &DataType) -> bool {
     match column_value {
         ContextuallyTypedRowValueConstructorElement::ValueExpression(expression) => match expression {
+            ValueExpression::Boolean(..) => match data_type {
+                DataType::Predefined(PredefinedType::Boolean) => true,
+                DataType::Predefined(PredefinedType::Numeric(..)) => true,
+                _ => false,
+            },
             ValueExpression::Numeric(numeric_expression) => match numeric_expression {
                 NumericValueExpression::SimpleU64(..) => match data_type {
                     DataType::Predefined(PredefinedType::Numeric(NumericType::Integer)) => true,

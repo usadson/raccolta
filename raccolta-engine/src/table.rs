@@ -8,12 +8,13 @@ use std::sync::{
     RwLock, RwLockReadGuard,
 };
 
+use bitvec::vec::BitVec;
 use raccolta_syntax::expression::{
     data_type::DataType,
     NumericValueExpression,
     row_value_constructor::ContextuallyTypedRowValueConstructorElement,
     string_value_expression::StringValueExpression,
-    ValueExpression,
+    ValueExpression, BooleanExpression,
 };
 
 use crate::{
@@ -41,6 +42,20 @@ impl EngineColumn {
 
         match value {
             ContextuallyTypedRowValueConstructorElement::ValueExpression(expression) => match expression {
+                ValueExpression::Boolean(BooleanExpression::Literal(value)) => match &mut self.values {
+                    EngineColumnContainer::Booleans(vec) => {
+                        vec.push(value);
+                        Ok(())
+                    }
+                    EngineColumnContainer::Integers(vec) => {
+                        vec.push(if value { 1 } else { 0 });
+                        Ok(())
+                    }
+                    _ => internal_coercion_error(&self, ContextuallyTypedRowValueConstructorElement::ValueExpression(
+                        ValueExpression::Boolean(BooleanExpression::Literal(value))
+                    ))
+                }
+
                 ValueExpression::Numeric(numeric_expression) => match numeric_expression {
                     NumericValueExpression::SimpleU64(number) => {
                         match &mut self.values {
@@ -78,6 +93,8 @@ impl EngineColumn {
 
 #[derive(Debug)]
 pub enum EngineColumnContainer {
+    Booleans(BitVec),
+
     Integers(Vec<i32>),
 
     StringsVarying {
@@ -89,6 +106,7 @@ pub enum EngineColumnContainer {
 impl EngineColumnContainer {
     pub fn len(&self) -> usize {
         match self {
+            Self::Booleans(vec) => vec.len(),
             Self::Integers(vec) => vec.len(),
             Self::StringsVarying{ values, .. } => values.len(),
         }
@@ -145,6 +163,8 @@ impl EngineTableColumnIterator {
                     let column = &table.columns[*column_index];
 
                     match &column.values {
+                        EngineColumnContainer::Booleans(vec) =>
+                            EngineRowColumnValue::Bool(vec[row_index]),
                         EngineColumnContainer::Integers(vec) =>
                             EngineRowColumnValue::I32(vec[row_index]),
                         EngineColumnContainer::StringsVarying { values, .. } =>
@@ -181,6 +201,7 @@ impl Iterator for EngineTableColumnIterator {
                 .iter()
                 .map(|column| {
                     match &column.values {
+                        EngineColumnContainer::Booleans(vec) => EngineRowColumnValue::Bool(vec[idx]),
                         EngineColumnContainer::Integers(vec) => EngineRowColumnValue::I32(vec[idx]),
                         EngineColumnContainer::StringsVarying { values, .. } => EngineRowColumnValue::String(values[idx].clone()),
                     }

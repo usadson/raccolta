@@ -22,6 +22,7 @@ use std::{
     },
 };
 
+use bitvec::vec::BitVec;
 use unicase::UniCase;
 
 use raccolta_syntax::{
@@ -84,6 +85,9 @@ impl Engine {
 
     fn create_value_container_for_column(&self, column: &ColumnDefinition) -> Option<EngineColumnContainer> {
         match &column.data_type {
+            DataType::Predefined(PredefinedType::Boolean) => {
+                Some(EngineColumnContainer::Booleans(BitVec::new()))
+            }
             DataType::Predefined(PredefinedType::Numeric(NumericType::Integer)) => {
                 Some(EngineColumnContainer::Integers(Vec::new()))
             }
@@ -321,6 +325,7 @@ pub struct EngineRow {
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum EngineRowColumnValue {
+    Bool(bool),
     I32(i32),
     String(String),
 }
@@ -332,6 +337,16 @@ impl EngineRowColumnValue {
         ordering_specification: OrderingSpecification
     ) -> std::cmp::Ordering {
         match &self {
+            Self::Bool(self_value) => match &other {
+                Self::Bool(other_value) => {
+                    let ordering = self_value.cmp(other_value);
+                    match ordering_specification {
+                        OrderingSpecification::Ascending => ordering,
+                        OrderingSpecification::Descending => ordering.reverse(),
+                    }
+                }
+                _ => std::cmp::Ordering::Equal,
+            }
             Self::I32(self_value) => match &other {
                 Self::I32(other_value) => {
                     let ordering = self_value.cmp(other_value);
@@ -359,6 +374,7 @@ impl EngineRowColumnValue {
 impl Display for EngineRowColumnValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
+            Self::Bool(b) => Display::fmt(&b, f),
             Self::I32(i) => Display::fmt(&i, f),
             Self::String(s) => Display::fmt(&s, f),
         }
