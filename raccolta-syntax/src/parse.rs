@@ -1072,7 +1072,13 @@ impl Parser {
             ReservedWord::Int | ReservedWord::Integer => DataType::Predefined(
                 PredefinedType::Numeric(NumericType::Integer)
             ),
+
             ReservedWord::Varchar => self.parse_data_type_varchar(input, &mut tokens)?,
+
+            ReservedWord::Boolean => DataType::Predefined(
+                PredefinedType::Boolean
+            ),
+
             _ => return Err(StatementParseError::TableElementSingleUnknownDataTypeKeyword {
                 found: data_type_reserved_word_token.as_string(input).into(),
                 reserved_word: data_type_reserved_word,
