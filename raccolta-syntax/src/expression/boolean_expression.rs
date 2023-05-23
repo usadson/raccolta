@@ -5,5 +5,6 @@ use crate::predicate::Predicate;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum BooleanExpression {
+    Literal(bool),
     Predicate(Box<Predicate>),
 }

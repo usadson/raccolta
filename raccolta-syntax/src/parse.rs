@@ -1248,6 +1248,14 @@ impl Parser {
                 )
             }
 
+            TokenKind::ReservedWord(ReservedWord::False) => ValueExpression::Boolean(
+                BooleanExpression::Literal(false)
+            ),
+
+            TokenKind::ReservedWord(ReservedWord::True) => ValueExpression::Boolean(
+                BooleanExpression::Literal(true)
+            ),
+
             TokenKind::ReservedWord(ReservedWord::Count) => ValueExpression::SetFunctionSpecification(
                 self.parse_set_function_specification_count(input, tokens)?
             ),
