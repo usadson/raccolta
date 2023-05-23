@@ -111,11 +111,14 @@ fn main() {
 
     let parser = raccolta_syntax::Parser::new();
 
+    let mut previous_line = String::new();
+
     loop {
         println!();
 
         let line = inquire::Text::new(">")
             .with_autocomplete(AutoCompleter::new(Rc::clone(&engine)))
+            .with_initial_value(&previous_line)
             .prompt();
 
         let line = match line {
@@ -137,7 +140,7 @@ fn main() {
             Ok(res) => {
                 println!("{res:#?}");
                 let result = engine.execute_statement(res);
-                for message in result.messages {
+                for message in &result.messages {
                     match message {
                         EngineMessage::Error(err) => println!("Error: {err}"),
                         EngineMessage::Help(err) => println!("Info: {err}"),
@@ -161,6 +164,11 @@ fn main() {
                 }
 
                 println!("{} row(s)", result.row_count);
+
+                if result.messages.iter().all(|message| matches!(message, EngineMessage::Informational(..))) {
+                    previous_line = String::new();
+                    continue;
+                }
             }
             Err(e) => {
                 MessageKind::Error.print("error");
@@ -181,6 +189,8 @@ fn main() {
                 print_debug_info(e);
             }
         }
+
+        previous_line = line;
     }
 }
 
