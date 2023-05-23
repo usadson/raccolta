@@ -293,7 +293,7 @@ fn print_error_findings<'input>(
     println!();
 
     print!("  ");
-    syntax_highlighted::print_syntax_highlighted(input, &tokens);
+    syntax_highlighted::print_syntax_highlighted(input, &tokens, &mut std::io::stdout());
 
     print!("  ");
 

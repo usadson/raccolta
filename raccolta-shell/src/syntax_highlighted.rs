@@ -17,7 +17,7 @@ use raccolta_syntax::{
     TokenKind,
 };
 
-pub fn print_syntax_highlighted(input: &str, tokens: &[Token]) {
+pub fn print_syntax_highlighted(input: &str, tokens: &[Token], output: &mut impl std::io::Write) {
     let mut index = 0;
     for token in tokens {
         print!("{}", &input[index..token.first_character_byte_idx]);
@@ -26,7 +26,7 @@ pub fn print_syntax_highlighted(input: &str, tokens: &[Token]) {
         match token.kind() {
             TokenKind::Identifier => {
                 _ = execute!(
-                    std::io::stdout(),
+                    output,
                     SetForegroundColor(Color::Green),
                     Print(token.as_string(input)),
                     ResetColor
@@ -36,7 +36,7 @@ pub fn print_syntax_highlighted(input: &str, tokens: &[Token]) {
 
             TokenKind::NonReservedWord(..) => {
                 _ = execute!(
-                    std::io::stdout(),
+                    output,
                     SetForegroundColor(Color::Blue),
                     SetAttribute(Attribute::Bold),
                     Print(token.as_string(input)),
@@ -48,7 +48,7 @@ pub fn print_syntax_highlighted(input: &str, tokens: &[Token]) {
 
             TokenKind::ReservedWord(..) => {
                 _ = execute!(
-                    std::io::stdout(),
+                    output,
                     SetForegroundColor(Color::Magenta),
                     SetAttribute(Attribute::Bold),
                     Print(token.as_string(input)),
@@ -63,5 +63,5 @@ pub fn print_syntax_highlighted(input: &str, tokens: &[Token]) {
         }
     }
 
-    println!("{}", &input[index..]);
+    _ = writeln!(output, "{}", &input[index..]);
 }
