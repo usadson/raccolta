@@ -221,6 +221,7 @@ mod tests {
     use pretty_assertions::{
         assert_eq
     };
+    use rstest::rstest;
 
 
     #[test]
@@ -252,6 +253,47 @@ mod tests {
 
             Token::new(54, 55, TokenKind::Semicolon),
         ]);
+    }
+
+    #[rstest]
+    #[case("HELLO\tWORLD", "U+0009, Horizontal Tab")]
+    #[case("HELLO\nWORLD", "U+000A, Line Feed")]
+    #[case("HELLO\u{000B}WORLD", "U+000B, Vertical Tabulation")]
+    #[case("HELLO\u{000C}WORLD", "U+000C, Form Feed")]
+    #[case("HELLO\rWORLD", "U+000D, Carriage Return")]
+    #[case("HELLO WORLD", "U+0020, Space")]
+
+    #[case("HELLO\u{00A0}WORLD", "U+00A0, No-Break Space")]
+
+    #[case("HELLO\u{2000}WORLD", "U+2000, En Quad")]
+    #[case("HELLO\u{2001}WORLD", "U+2001, Em Quad")]
+    #[case("HELLO\u{2002}WORLD", "U+2002, En Space")]
+    #[case("HELLO\u{2003}WORLD", "U+2003, Em Space")]
+    #[case("HELLO\u{2004}WORLD", "U+2004, Three-Per-Em Space")]
+    #[case("HELLO\u{2005}WORLD", "U+2005, Four-Per-Em Space")]
+    #[case("HELLO\u{2006}WORLD", "U+2006, Six-Per-Em Space")]
+    #[case("HELLO\u{2007}WORLD", "U+2007, Figure Space")]
+    #[case("HELLO\u{2008}WORLD", "U+2008, Punctuation Space")]
+    #[case("HELLO\u{2009}WORLD", "U+2009, Thin Space")]
+    #[case("HELLO\u{200A}WORLD", "U+200A, Hair Space")]
+    #[case("HELLO\u{200B}WORLD", "U+200B, Zero Width Space")]
+    #[case("HELLO\u{200C}WORLD", "U+200C, Zero Width Non-Joiner")]
+    #[case("HELLO\u{200D}WORLD", "U+200D, Zero Width Joiner")]
+    #[case("HELLO\u{200E}WORLD", "U+200E, Left-To-Right Mark")]
+    #[case("HELLO\u{200F}WORLD", "U+200F, Right-To-Left Mark")]
+
+    #[case("HELLO\u{2028}WORLD", "U+2028, Line Separator")]
+    #[case("HELLO\u{2029}WORLD", "U+2029, Paragraph Separator")]
+
+    #[case("HELLO\u{3000}WORLD", "U+3000, Ideographic Space")]
+
+    #[case("HELLO\u{FEFF}WORLD", "U+FEFF, Zero Width No-Break Space")]
+    fn lexer_test_whitespace_compliance(#[case] input: &str, #[case] whitespace_description: &str) {
+        let tokens: Vec<_> = Lexer::new(input).collect();
+        assert_eq!(tokens.len(), 2, "Whitespace incorrectly recognized: {whitespace_description}");
+
+        assert_eq!(tokens[0].as_string(input), &input[0..5]);
+        assert_eq!(tokens[1].as_string(input), &input[input.len()-5..]);
     }
 
 }
