@@ -233,9 +233,38 @@ impl inquire::Autocomplete for AutoCompleter {
             input: &str,
             highlighted_suggestion: Option<String>,
         ) -> Result<Option<String>, inquire::CustomUserError> {
-        _ = input;
-        _ = highlighted_suggestion;
-        Ok(None)
+        // If there wasn't a suggestion to begin with, nothing is to be done.
+        // We might suggest something that requires a heavy computation, but
+        // at the moment, there isn't such a thing, since [`get_suggestions`] is
+        // quite fast.
+        let Some(highlighted_suggestion) = highlighted_suggestion else {
+            return Ok(None);
+        };
+
+        // If the user hasn't typed anything yet (i.e. it's completing the first
+        // token), we can just suggest this suggestion.
+        // Add a space after it for rapid typing ^_^
+        if input.trim().is_empty() {
+            return Ok(Some(format!("{} ", highlighted_suggestion)));
+        }
+
+        // Otherwise, we need to find out what word is
+
+        // If there isn't a token to be completed (e.g. not SEL -> SELECT),
+        // append the suggestion to the input.
+        if input.ends_with(' ') {
+            return Ok(Some(format!("{}{} ", input, highlighted_suggestion)));
+        }
+
+
+        // Complete the input with the highlighted suggestion:
+        // E.g. input = "SELECT * FR" highlighted_suggestion = "FROM"
+        // -> "SELECT * FROM"
+
+        let input = input.rfind(' ')
+            .map(|last_space_idx| &input[..last_space_idx + 1])
+            .unwrap_or("");
+        Ok(Some(format!("{input}{highlighted_suggestion} ")))
     }
 
     fn get_suggestions(&mut self, input: &str) -> Result<Vec<String>, inquire::CustomUserError> {
