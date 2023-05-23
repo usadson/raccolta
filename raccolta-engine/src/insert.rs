@@ -37,7 +37,12 @@ pub fn execute_from_contextually_typed_table_value_constructor(
 fn execute_from_contextually_typed_table_value_constructor_impl(
     table: Arc<RwLock<EngineTable>>, constructor: ContextuallyTypedTableValueConstructor
 ) -> Result<EngineResult, EngineResult> {
-    let table = &mut table.as_ref().write().expect("TODO: Failed to write() to table");
+    let table = &mut table
+        .as_ref().write()
+        .map_err(|error| EngineResult::with_messages(vec![
+            EngineMessage::Error("Failed to acquire lock for table, as it is poisoned".into()),
+            EngineMessage::Error(error.to_string().into())
+        ]))?;
     validate_table_with_constructor(table, &constructor)?;
 
     let row_count = constructor.values.len();
@@ -80,7 +85,9 @@ fn is_column_value_trivially_convertible_to(column_value: &ContextuallyTypedRowV
                 DataType::Predefined(PredefinedType::CharacterString { .. }) => true,
                 _ => false,
             }
-            _ => todo!()
+
+            // TODO
+            _ => false,
         }
     }
 }

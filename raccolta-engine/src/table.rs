@@ -16,7 +16,12 @@ use raccolta_syntax::expression::{
     ValueExpression,
 };
 
-use crate::{EngineResult, EngineRow, EngineRowColumnValue};
+use crate::{
+    EngineMessage,
+    EngineResult,
+    EngineRow,
+    EngineRowColumnValue,
+};
 
 #[derive(Debug)]
 pub struct EngineColumn {
@@ -26,19 +31,30 @@ pub struct EngineColumn {
 
 impl EngineColumn {
     pub fn append(&mut self, value: ContextuallyTypedRowValueConstructorElement) -> Result<(), EngineResult> {
+        let internal_coercion_error = |column, value| {
+            Err(EngineResult::with_messages(vec![
+                EngineMessage::Error(format!(
+                    "Internal Error: non-coerced type {value:#?} as candidate for appending to column {column:?}",
+                ).into())
+            ]))
+        };
+
         match value {
             ContextuallyTypedRowValueConstructorElement::ValueExpression(expression) => match expression {
                 ValueExpression::Numeric(numeric_expression) => match numeric_expression {
-                    NumericValueExpression::SimpleU64(value) => {
+                    NumericValueExpression::SimpleU64(number) => {
                         match &mut self.values {
                             EngineColumnContainer::Integers(vec) => {
-                                vec.push(value as i32);
+                                vec.push(number as i32);
                                 Ok(())
                             }
-                            _ => todo!()
+                            _ => internal_coercion_error(&self, ContextuallyTypedRowValueConstructorElement::ValueExpression(
+                                ValueExpression::Numeric(NumericValueExpression::SimpleU64(number)))
+                            )
                         }
                     }
                 }
+
                 ValueExpression::StringValueExpression(string_expression) => match string_expression {
                     StringValueExpression::Literal(mut literal) => {
                         match &mut self.values {
@@ -47,11 +63,14 @@ impl EngineColumn {
                                 values.push(literal);
                                 Ok(())
                             }
-                            _ => todo!()
+                            _ => internal_coercion_error(&self, ContextuallyTypedRowValueConstructorElement::ValueExpression(
+                                ValueExpression::StringValueExpression(StringValueExpression::Literal(literal)))
+                            )
                         }
                     }
                 }
-                _ => todo!(),
+
+                _ => internal_coercion_error(&self, ContextuallyTypedRowValueConstructorElement::ValueExpression(expression))
             }
         }
     }
