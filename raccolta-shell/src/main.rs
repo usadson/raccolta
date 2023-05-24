@@ -107,7 +107,7 @@ fn get_range_of_string_slice(haystack: &str, needle: &str) -> Option<Range<usize
 fn main() {
     println!("Raccolta Shell\n");
 
-    let engine = Rc::new(RefCell::new(raccolta_engine::Engine::new()));
+    let engine = Rc::new(RefCell::new(raccolta_engine::Engine::new_debug()));
 
     let parser = raccolta_syntax::Parser::new();
 
@@ -150,17 +150,42 @@ fn main() {
                 }
 
                 if !result.column_names.is_empty() {
+                    let mut column_values = Vec::with_capacity(result.column_names.len());
                     for column_name in result.column_names {
-                        print!("{column_name}    ");
+                        let mut data = Vec::with_capacity(result.row_count + 1);
+                        data.push(column_name);
+
+                        column_values.push(data);
                     }
                     println!();
 
                     for row in result.row_iterator {
-                        for value in row.values {
-                            print!("{value}    ");
+                        for (index, value) in row.values.into_iter().enumerate() {
+                            column_values[index].push(value.to_string());
                         }
-                        println!();
                     }
+
+                    let padding = 2;
+                    let lengths: Vec<_> = column_values.iter()
+                        .map(|values| values.iter().map(|value| value.len()).max().unwrap() + padding)
+                        .collect();
+
+                    let total_length: usize = lengths.iter().sum();
+                    let total_length = total_length + 2 * lengths.len();
+
+                    println!("{s:-<total_length$}-+", s = "+-");
+                    for row_index in 0..=result.row_count {
+                        for (column_idx, column_length) in lengths.iter().enumerate() {
+                            let column_value = &column_values[column_idx][row_index];
+                            print!("| {column_value: <column_length$}");
+                        }
+                        println!(" |");
+
+                        if row_index == 0 {
+                            println!("{s:-<total_length$}-+", s = "+-");
+                        }
+                    }
+                    println!("{s:-<total_length$}-+", s = "+-");
                 }
 
                 println!("{} row(s)", result.row_count);
