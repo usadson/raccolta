@@ -809,6 +809,7 @@ impl Parser {
         }
 
         let mut order_by = None;
+        let fetch = None;
 
         if !is_end_of_statement(tokens) {
             if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Order) {
@@ -831,6 +832,7 @@ impl Parser {
                         )
                     ),
                     order_by,
+                    fetch,
                 }
             )
         ))
@@ -1425,6 +1427,7 @@ mod tests {
                         )
                     ),
                     order_by: None,
+                    fetch: None,
                 }
             )
         );
@@ -1472,6 +1475,7 @@ mod tests {
                         )
                     ),
                     order_by: None,
+                    fetch: None,
                 }
             )
         );
@@ -1506,6 +1510,7 @@ mod tests {
                         )
                     ),
                     order_by: None,
+                    fetch: None,
                 }
             )
         );
@@ -1680,6 +1685,7 @@ mod tests {
                 QueryExpression {
                     body,
                     order_by: None,
+                    fetch: None,
                 }
             )
         );
@@ -1943,7 +1949,8 @@ mod tests {
                         Some(OrderByClause {
                             sort_specification_list: specifications.into()
                         })
-                    }
+                    },
+                    fetch: None,
                 }
             )
         );

@@ -1,7 +1,7 @@
 // Copyright (C) 2023 Tristan Gerritsen <tristan@thewoosh.org>
 // All Rights Reserved.
 
-use crate::clause::order_by_clause::OrderByClause;
+use crate::clause::{order_by_clause::OrderByClause, fetch_first_clause::FetchFirstClause};
 
 use super::QuerySpecification;
 
@@ -51,6 +51,8 @@ pub struct QueryExpression {
 
     /// An optional **`ORDER BY`** clause.
     pub order_by: Option<OrderByClause>,
+
+    pub fetch: Option<FetchFirstClause>,
 }
 
 /// ```text
