@@ -22,7 +22,7 @@ use std::{
     },
 };
 
-use bitvec::vec::BitVec;
+use bitvec::prelude::*;
 use unicase::UniCase;
 
 use raccolta_syntax::{
@@ -80,6 +80,51 @@ impl Engine {
     pub fn new() -> Self {
         Self {
             tables: HashMap::new(),
+        }
+    }
+
+    pub fn new_debug() -> Self {
+        let table_name = Arc::from("People");
+        let mut tables = HashMap::new();
+        tables.insert(
+            UniCase::from(Arc::clone(&table_name)),
+            Arc::new(RwLock::new(EngineTable {
+                name: table_name,
+                columns: vec![
+                    EngineColumn {
+                        descriptor: EngineColumnDescriptor {
+                            name: "Name".into(),
+                            data_type: DataType::Predefined(PredefinedType::CharacterString { definition: CharacterStringType::Varying { length: 50 }, character_set: None }),
+                        },
+                        values: EngineColumnContainer::StringsVarying {
+                            values: vec![
+                                "Barrack Obama".into(),
+                                "Michael Jackson".into(),
+                                "Albert Einstein".into(),
+                                "Chris Lattner".into(),
+                                "Graydon Hoare".into(),
+                            ],
+                            maximum_length: 50
+                        }
+                    },
+                    EngineColumn {
+                        descriptor: EngineColumnDescriptor {
+                            name: "HasDied".into(),
+                            data_type: DataType::Predefined(PredefinedType::Boolean),
+                        },
+                        values: EngineColumnContainer::Booleans(bitvec![
+                            0,
+                            1,
+                            1,
+                            0,
+                            0,
+                        ])
+                    }
+                ]
+            }))
+        );
+        Self {
+            tables
         }
     }
 
