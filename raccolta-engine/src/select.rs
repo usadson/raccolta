@@ -16,11 +16,14 @@ use raccolta_syntax::{
             SelectList,
             SelectSublist,
         },
-        ValueExpression,
+        ValueExpression, SimpleValueSpecification,
     },
-    clause::order_by_clause::{
-        OrderByClause,
-        OrderingSpecification,
+    clause::{
+        fetch_first_clause::FetchFirstClause,
+        order_by_clause::{
+            OrderByClause,
+            OrderingSpecification,
+        },
     },
 };
 
@@ -49,8 +52,9 @@ pub fn execute(
     statement: QuerySpecification,
     table: Arc<RwLock<EngineTable>>,
     order_by_clause: Option<OrderByClause>,
+    fetch_first_clause: Option<FetchFirstClause>,
 ) -> EngineResult {
-    match execute_inner(statement, table, order_by_clause) {
+    match execute_inner(statement, table, order_by_clause, fetch_first_clause) {
         Ok(result) => result,
         Err(result) => result,
     }
@@ -61,7 +65,8 @@ pub fn execute(
 fn execute_inner(
     statement: QuerySpecification,
     table: Arc<RwLock<EngineTable>>,
-    order_by_clause: Option<OrderByClause>
+    order_by_clause: Option<OrderByClause>,
+    fetch_first_clause: Option<FetchFirstClause>,
 ) -> Result<EngineResult, EngineResult> {
     let selection_phase = match &statement.select_list {
         SelectList::Asterisk => execute_select_return_all(table)?,
@@ -70,13 +75,26 @@ fn execute_inner(
 
     let sorting_method = resolve_sorting_method(&selection_phase.column_names, order_by_clause)?;
 
-    let row_iterator = selection_phase.row_iterator
+    let mut row_iterator = selection_phase.row_iterator
         .apply_order_by(sorting_method);
+
+    let mut row_count = selection_phase.row_count;
+
+    if let Some(fetch_first_clause) = fetch_first_clause {
+        let max = match fetch_first_clause.quantity.value {
+            SimpleValueSpecification::LiteralUnsigned(value) => value as _,
+        };
+
+        if max < selection_phase.row_count {
+            row_iterator = Box::new(row_iterator.take(max));
+            row_count = max;
+        }
+    }
 
     Ok(EngineResult {
         messages: Vec::new(),
         column_names: selection_phase.column_names,
-        row_count: selection_phase.row_count,
+        row_count,
         row_iterator,
     })
 }

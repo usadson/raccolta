@@ -26,9 +26,12 @@ use bitvec::prelude::*;
 use unicase::UniCase;
 
 use raccolta_syntax::{
-    clause::order_by_clause::{
-        OrderByClause,
-        OrderingSpecification,
+    clause::{
+        fetch_first_clause::FetchFirstClause,
+        order_by_clause::{
+            OrderByClause,
+            OrderingSpecification,
+        },
     },
     expression::{
         data_type::{
@@ -270,7 +273,7 @@ impl Engine {
             raccolta_syntax::expression::query_expression::QueryExpressionBody::SimpleTable(simple_table) => {
                 match simple_table {
                     raccolta_syntax::expression::query_expression::SimpleTable::QuerySpecification(query_specification) => {
-                        self.execute_statement_select_simple_table_query_specification(query_specification, statement.order_by)
+                        self.execute_statement_select_simple_table_query_specification(query_specification, statement.order_by, statement.fetch)
                     }
                 }
             }
@@ -281,7 +284,8 @@ impl Engine {
     fn execute_statement_select_simple_table_query_specification(
         &self,
         query_specification: QuerySpecification,
-        order_by_clause: Option<OrderByClause>
+        order_by_clause: Option<OrderByClause>,
+        fetch_first_clause: Option<FetchFirstClause>,
     ) -> EngineResult {
         let Some(table_expression) = &query_specification.table_expression else {
             return self.execute_unsupported_statement();
@@ -303,7 +307,7 @@ impl Engine {
             ]);
         };
 
-        select::execute(query_specification, table_ref.clone(), order_by_clause)
+        select::execute(query_specification, table_ref.clone(), order_by_clause, fetch_first_clause)
     }
 
     /// Returns a message describing that this statement is not yet supported
