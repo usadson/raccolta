@@ -3,7 +3,7 @@
 
 use crate::keyword::{
     NonReservedWord,
-    ReservedWord,
+    ReservedWord, VendorReservedWord,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -168,6 +168,8 @@ pub enum TokenKind {
 
     /// An unsigned integer [`u64`].
     UnsignedInteger(u64),
+
+    VendorReservedWord(VendorReservedWord),
 
     /// The `|` token
     VerticalBar,

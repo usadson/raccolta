@@ -503,6 +503,30 @@ pub enum StatementParseError<'input> {
         token_kind: TokenKind,
     },
 
+    #[error("unexpected end-of-file, expected `LIMIT`")]
+    VendorLimitClauseUnexpectedEndOfFileExpectedIntroductionKeyword {
+        found: ErrorFindLocation<'input>,
+    },
+
+    #[error("unexpected end-of-file, expected a number")]
+    #[strum(props(Help="`LIMIT` should be followed by the maximum rows to SELECT, for example: `LIMIT 10`"))]
+    VendorLimitClauseUnexpectedEndOfFileExpectedCount {
+        found: ErrorFindLocation<'input>,
+    },
+
+    #[error("unexpected token: {token_kind}, expected `LIMIT`")]
+    VendorLimitClauseUnexpectedTokenExpectedIntroductionKeyword {
+        found: ErrorFindLocation<'input>,
+        token_kind: TokenKind,
+    },
+
+    #[error("unexpected token: {token_kind}, expected a number")]
+    #[strum(props(Help="`LIMIT` should be followed by the maximum rows to SELECT, for example: `LIMIT 10`"))]
+    VendorLimitClauseUnexpectedTokenExpectedCount {
+        found: ErrorFindLocation<'input>,
+        token_kind: TokenKind,
+    },
+
     #[error("unexpected end-of-file: expected a `WHERE` clause")]
     WhereClauseUnexpectedEndOfFile {
         found: ErrorFindLocation<'input>,

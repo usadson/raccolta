@@ -2695,6 +2695,33 @@ pub enum ReservedWord {
     Year,
 }
 
+/// A reserved word that originated from some kind of extensions or otherwise
+/// implementation-defined `<reserved word>`s.
+///
+/// FIXME: Find a way to enable and disable these extensions at runtime.
+///
+/// # References
+/// * [MariaDB - Knowledge Base - Reserved Keywords](https://mariadb.com/kb/en/reserved-words/)
+/// * [MySQL - Documentation - Keywords and Reserved Words](https://dev.mysql.com/doc/refman/8.0/en/keywords.html)
+/// * [PostgreSQL - Documentation - Appendix C. SQL Key Words](https://www.postgresql.org/docs/current/sql-keywords-appendix.html)
+/// * [Transact-SQL Reserved Keywords](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/reserved-keywords-transact-sql)
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(AsRefStr, EnumIter, strum::Display)]
+pub enum VendorReservedWord {
+    #[strum(props(DefinedBy="MySQL, MariaDB"))]
+    /// MySQL, MariaDB
+    ///
+    /// 20+ years old
+    ///
+    /// # References
+    /// * [MariaDB Documentation](https://mariadb.com/kb/en/limit/)
+    /// * [MySQL Source Code Blame](https://github.com/mysql/mysql-server/blame/28113396ecc3a4594a6f0075e403407d0e1eb6e7/sql/lex.h#LL234C5-L234C10)
+    Limit,
+
+    /// T-SQL
+    Top,
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;

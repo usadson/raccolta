@@ -14,6 +14,11 @@ use std::debug_assert;
 
 use crate::{
     clause::{
+        fetch_first_clause::{
+            FetchFirstClause,
+            FetchFirstClauseOrigin,
+            FetchFirstQuantity,
+        },
         FromClause,
         order_by_clause::{
             OrderByClause,
@@ -27,9 +32,10 @@ use crate::{
         BooleanExpression,
         ColumnReference,
         data_type::{
+            CharacterStringType,
             DataType,
             NumericType,
-            PredefinedType, CharacterStringType,
+            PredefinedType,
         },
         NumericValueExpression,
         query_specification::{
@@ -48,6 +54,7 @@ use crate::{
             ContextuallyTypedRowValueConstructorElement,
         },
         row_value_expression::ContextuallyTypedRowValueExpression,
+        SimpleValueSpecification,
         string_value_expression::StringValueExpression,
         TableExpression,
         table_reference::{
@@ -61,6 +68,7 @@ use crate::{
     keyword::{
         NonReservedWord,
         ReservedWord,
+        VendorReservedWord,
     },
     Lexer,
     predicate::{
@@ -75,7 +83,10 @@ use crate::{
         TableDefinition,
         TableElement,
     },
-    set_function::{SetQuantifier, SetFunctionSpecification},
+    set_function::{
+        SetFunctionSpecification,
+        SetQuantifier,
+    },
     statement::{
         insert_statement::{
             InsertColumnsAndSource,
@@ -93,9 +104,17 @@ use crate::{
 
 use extensions::ParseArrayExtensions;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Parser {
+    allow_vendor_extensions: bool,
+}
 
+impl Default for Parser {
+    fn default() -> Self {
+        Self {
+            allow_vendor_extensions: true,
+        }
+    }
 }
 
 type StatementResult<'input> = Result<SqlExecutableStatement, StatementParseError<'input>>;
@@ -809,17 +828,29 @@ impl Parser {
         }
 
         let mut order_by = None;
-        let fetch = None;
+        let mut fetch = None;
 
-        if !is_end_of_statement(tokens) {
-            if tokens[0].kind() == TokenKind::ReservedWord(ReservedWord::Order) {
-                order_by = Some(self.parse_clause_order_by(input, &mut tokens)?);
-            } else {
-                return Err(StatementParseError::SelectStatementUnexpectedToken{
-                    found: tokens[0].as_string(input).into(),
-                    token_kind: tokens[0].kind(),
-                });
+        while !is_end_of_statement(tokens) {
+            match tokens[0].kind() {
+                TokenKind::ReservedWord(ReservedWord::Order) if order_by.is_none() => {
+                    order_by = Some(self.parse_clause_order_by(input, &mut tokens)?);
+                    continue;
+                }
+
+                TokenKind::VendorReservedWord(VendorReservedWord::Limit) if fetch.is_none() => {
+                    fetch = self.parse_vendor_limit_clause(input, &mut tokens)?;
+                    if fetch.is_some() {
+                        continue;
+                    }
+                }
+
+                _ => (),
             }
+
+            return Err(StatementParseError::SelectStatementUnexpectedToken{
+                found: tokens[0].as_string(input).into(),
+                token_kind: tokens[0].kind(),
+            });
         }
 
         // TODO this sucks. Can't we take a shortcut without code duplication?
@@ -1368,6 +1399,57 @@ impl Parser {
                 })
             ))
         ))
+    }
+
+    /// Parse the vendor-specific `LIMIT` clause. It originated from **MySQL**,
+    /// and acts as the SQL-standard `FETCH FIRST` clause.
+    fn parse_vendor_limit_clause<'input>(
+        &self,
+        input: &'input str,
+        tokens: &mut &[Token],
+    ) -> Result<Option<FetchFirstClause>, StatementParseError<'input>> {
+        if !self.allow_vendor_extensions {
+            return Ok(None);
+        }
+
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::VendorLimitClauseUnexpectedEndOfFileExpectedIntroductionKeyword {
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
+            });
+        }
+
+        if tokens[0].kind() != TokenKind::VendorReservedWord(VendorReservedWord::Limit) {
+            return Err(StatementParseError::VendorLimitClauseUnexpectedTokenExpectedIntroductionKeyword {
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
+                token_kind: tokens[0].kind(),
+            });
+        }
+
+        *tokens = &tokens[1..];
+
+        if is_end_of_statement(tokens) {
+            return Err(StatementParseError::VendorLimitClauseUnexpectedEndOfFileExpectedCount {
+                found: ErrorFindLocation::EndOfFile { complete_input: input },
+            });
+        }
+
+        let token = tokens[0];
+        *tokens = &tokens[1..];
+
+        match token.kind() {
+            TokenKind::UnsignedInteger(integer) => Ok(Some(FetchFirstClause {
+                quantity: FetchFirstQuantity {
+                    is_percent: false,
+                    value: SimpleValueSpecification::LiteralUnsigned(integer),
+                },
+                origin: FetchFirstClauseOrigin::Limit,
+            })),
+
+            _ => Err(StatementParseError::VendorLimitClauseUnexpectedTokenExpectedCount {
+                found: ErrorFindLocation::Position(token.as_string(input)),
+                token_kind: token.kind(),
+            })
+        }
     }
 }
 

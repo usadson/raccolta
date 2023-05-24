@@ -14,7 +14,7 @@ pub mod statement;
 pub mod token;
 
 use characters::SqlCharacterExtensions;
-use keyword::{ReservedWord, NonReservedWord};
+use keyword::{ReservedWord, NonReservedWord, VendorReservedWord};
 pub use token::{Token, TokenKind};
 
 pub use parse::{
@@ -28,13 +28,15 @@ use strum::IntoEnumIterator;
 pub struct Lexer<'a> {
     input: &'a str,
     character_byte_idx: usize,
+    allow_vendor_keywords: bool,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
             input,
-            character_byte_idx: 0
+            character_byte_idx: 0,
+            allow_vendor_keywords: true,
         }
     }
 
@@ -122,7 +124,16 @@ impl<'a> Lexer<'a> {
 
                     None => match NonReservedWord::iter().find(|non_reserved_word| non_reserved_word.as_ref().eq_ignore_ascii_case(str)) {
                         Some(non_reserved_word) => TokenKind::NonReservedWord(non_reserved_word),
-                        None => TokenKind::Identifier
+                        None => {
+                            if self.allow_vendor_keywords {
+                                match VendorReservedWord::iter().find(|vendor_reserved_word| vendor_reserved_word.as_ref().eq_ignore_ascii_case(str)) {
+                                    Some(vendor_reserved_word) => TokenKind::VendorReservedWord(vendor_reserved_word),
+                                    None => TokenKind::Identifier
+                                }
+                            } else {
+                                TokenKind::Identifier
+                            }
+                        }
                     }
                 }
             }

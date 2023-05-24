@@ -14,6 +14,22 @@ use crate::expression::SimpleValueSpecification;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FetchFirstClause {
     pub quantity: FetchFirstQuantity,
+    pub origin: FetchFirstClauseOrigin,
+}
+
+/// Clarifies where this [`FetchFirstClause`] came from. Since many vendor
+/// extensions such as `LIMIT` and `TOP` predate `FETCH FIRST`, it is good
+/// practice to support those as well.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum FetchFirstClauseOrigin {
+    /// Originated from standard SQL `FETCH FIRST`
+    FetchFirst,
+
+    /// Originated from MySQL vendor extension `LIMIT`
+    Limit,
+
+    /// Originated from T-SQL vendor extension `TOP`
+    Top,
 }
 
 /// fetch_first_quantity ::=
