@@ -73,18 +73,27 @@ fn execute_inner(
         SelectList::Sublist(sublist) => execute_select_sublist(table, sublist)?,
     };
 
+    let limited_row_count = fetch_first_clause.map(|clause| match clause.quantity.value {
+        SimpleValueSpecification::LiteralUnsigned(value) => value as usize,
+    });
+
+    if limited_row_count == Some(0) {
+        return Ok(EngineResult {
+            messages: Vec::new(),
+            column_names: selection_phase.column_names,
+            row_count: 0,
+            row_iterator: Box::new(std::iter::empty()),
+        });
+    }
+
+    let mut row_count = selection_phase.row_count;
+
     let sorting_method = resolve_sorting_method(&selection_phase.column_names, order_by_clause)?;
 
     let mut row_iterator = selection_phase.row_iterator
         .apply_order_by(sorting_method);
 
-    let mut row_count = selection_phase.row_count;
-
-    if let Some(fetch_first_clause) = fetch_first_clause {
-        let max = match fetch_first_clause.quantity.value {
-            SimpleValueSpecification::LiteralUnsigned(value) => value as _,
-        };
-
+    if let Some(max) = limited_row_count {
         if max < selection_phase.row_count {
             row_iterator = Box::new(row_iterator.take(max));
             row_count = max;
